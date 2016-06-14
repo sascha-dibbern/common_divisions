@@ -1,0 +1,55 @@
+#
+# *cfdivisions_bundlesequence = gitbased_masterfiles
+# *cfdivisions_depends = library_configuration
+#
+
+
+bundle agent gitbased_masterfiles
+{
+  classes:
+    "gitbased_masterfiles_git_branch_defined" 
+       not => strcmp("$(gitbased_masterfiles_git_branch)","");
+    "gitbased_masterfiles_git_source_defined" 
+       not => strcmp("$(gitbased_masterfiles_git_source)","");
+
+  vars:
+    !gitbased_masterfiles_git_branch_defined::
+      "gitbased_masterfiles_git_branch" string => "master";
+
+    !gitbased_masterfiles_git_source_defined::
+      "gitbased_masterfiles_git_source" string => "origin";
+
+  commands:
+
+  # Handling GIT-pull in masterfiles
+    am_policy_hub::
+      "/usr/bin/git pull $(gitbased_masterfiles_git_source)"
+        contain => gitbased_masterfiles_u_in_dir("$(master_location)"),
+	classes => git_pull_masterfiles_ok,
+        comment => "Pull $(master_location) from git repository",
+        handle  => "git_pull_masterfiles";
+
+  # Handling GIT-checkout in masterfiles
+      "/usr/bin/git checkout $(gitbased_masterfiles_git_branch)"
+        contain => gitbased_masterfiles_u_in_dir("$(master_location)"),
+	classes => git_checkout_masterfiles_ok,
+        comment => "Git checkout $(master_location) branch $(gitbased_masterfiles_git_branch)",
+        handle  => "git_checkout_masterfiles";
+}
+
+body contain gitbased_masterfiles_u_in_dir(s)
+{
+    chdir => "$(s)";
+}
+
+body classes git_pull_masterfiles_ok
+{
+    kept_returncodes => { "0" };
+    promise_kept => { "git_pull_masterfiles_ok" };
+}
+
+body classes git_checkout_masterfiles_ok
+{
+    kept_returncodes => { "0" };
+    promise_kept => { "git_checkout_masterfiles_ok" };
+}
