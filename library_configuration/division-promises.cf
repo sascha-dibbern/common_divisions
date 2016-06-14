@@ -1,0 +1,38 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends = 
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle agent library_configuration {
+ classes:
+      "have_library_configuration_data" expression => isvariable("library_configuration");
+
+      "$(ckeys)" expression => "any", scope => "namespace";
+
+  vars:
+      "library_configuration" data => readjson("$(sys.inputdir)/common_divisions.json", "999999");
+      "library_configuration_string" string => format("%S", library_configuration);
+
+      "bkeys" slist => getindices("library_configuration[vars]");
+      "vkeys_$(bkeys)" slist => getindices("library_configuration[vars][$(bkeys)]");
+      "$(vkeys_$(bkeys))" string => nth("library_configuration[vars][$(bkeys)]", $(vkeys));
+
+      "ckeys" slist => getindices("library_configuration[classes]");
+
+  reports:
+    DEBUG|DEBUG_library_configuration_load::
+      "DEBUG $(this.bundle): Library 'common_divisions'";
+      "DEBUG $(this.bundle): Got library_configuration data from $(file): $(library_configuration_string)"
+        ifvarclass => "have_library_configuration_data";
+      "DEBUG $(this.bundle): Got library_configuration key = $(vkeys_$(bkeys)), library_configuration value = $((vkeys_$(bkeys)))"
+        ifvarclass => "have_library_configuration_data";
+      "DEBUG $(this.bundle): Got library_configuration class = $(ckeys)"
+        ifvarclass => "have_library_configuration_data";
+      "DEBUG $(this.bundle): Could not read the library_configuration data from $(file)"
+        ifvarclass => "!have_library_configuration_data";
+}
