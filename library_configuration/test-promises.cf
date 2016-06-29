@@ -1,0 +1,104 @@
+
+bundle common divisions
+{
+  classes:
+    !common_divisions::
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=library_configuration");
+}
+
+body common control
+{
+      bundlesequence => {
+#                          @(cfdivisions.cfdivisions_common_divisions_bundlesequence)
+                         test
+      };
+
+      inputs => {
+                 @(cfdivisions.cfdivisions_common_divisions_inputs)
+      };
+}
+
+bundle agent test
+{
+  classes:
+
+   pass2::
+    "pass3" expression => any;
+
+   pass1::
+    "pass2" expression => any;
+
+   any::
+    "pass1" expression => any;
+
+   pass3::   
+    "right_configuration_file" 
+      expression => strcmp("$(common_divisions:library_configuration.configuration_file)","$(cfdivisions.common_divisions_path[library_configuration])/test.json");
+    "right_variable_v1"
+      expression => strcmp("$(common_divisions:library_configuration.v1)","v1-value");
+    "right_variable_v2"
+      expression => strcmp("$(common_divisions:library_configuration.v2)","2");
+
+  vars:
+    right_configuration_file::
+      "test[0]" string => "    ok 0 - Right configuration file $(common_divisions:library_configuration.configuration_file)";
+
+    pass3.!common_divisions:have_library_configuration_data::
+      "test[1]" 
+        string => "    not ok 1 - Got library_configuration data from $(common_divisions:library_configuration.configuration_file): $(common_divisions:library_configuration.configuration_string)",
+        policy => "free";
+
+    pass3.common_divisions:have_library_configuration_data::
+      "test[1]" 
+        string => "    ok 1 - Got library_configuration data from $(common_divisions:library_configuration.configuration_file): $(common_divisions:library_configuration.configuration_string)",
+        policy => "free";
+
+      "varkeys" slist  => {@(common_divisions:library_configuration.varkeys)};
+
+      "test[2]" 
+        string => "    ok 2 - Got varkey $(varkeys)",
+        policy => "free";
+
+    pass3.common_divisions:c1::
+      "test[3]" 
+        string => "    ok 3 - Got class common_divisions:c1";
+
+    pass3.!common_divisions:c1::
+      "test[3]" 
+        string => "    not ok 3 - Got class common_divisions:c1";
+
+
+    pass3.right_variable_v1::
+      "test[4]" 
+        string => "    ok 4 - Got variable common_divisions:library_configuration.v1";
+
+    pass3.!right_variable_v1::
+      "test[4]" 
+        string => "    not ok 4 - Got variable common_divisions:library_configuration.v1";
+
+    pass3.right_variable_v2::
+      "test[5]" 
+        string => "    ok 4 - Got variable common_divisions:library_configuration.v2";
+
+    pass3.!right_variable_v2::
+      "test[5]" 
+        string => "    not ok 4 - Got variable common_divisions:library_configuration.v2";
+
+    any::
+      "testkeys"
+        slist => getindices("test");
+
+  methods:
+    "configuration" usebundle => common_divisions:library_configuration("$(cfdivisions.common_divisions_path[library_configuration])/test.json");
+
+  reports:
+   pass1::
+    "pass1";
+   pass2::
+    "pass2";
+   pass3::
+    "pass3";
+    "$(test[$(testkeys)])";
+}
+
+

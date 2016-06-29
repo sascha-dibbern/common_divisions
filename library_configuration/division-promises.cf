@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = 
+# *cfdivisions_bundlesequence = main
 # *cfdivisions_depends = 
 #
 
@@ -8,31 +8,79 @@ body file control
     namespace => "common_divisions";
 }
 
-bundle agent library_configuration {
- classes:
-      "have_library_configuration_data" expression => isvariable("library_configuration");
+bundle agent main
+{
+  methods:
+    "configuration" usebundle => library_configuration("");
+}
 
-      "$(ckeys)" expression => "any", scope => "namespace";
+bundle agent library_configuration(file) 
+{
+  classes:
+   
+    any::
+
+      "file_defined"
+        not        => strcmp("$(file)","");
+
+      "have_library_configuration_data" 
+        expression => regcmp(".*\{.*\}.*","$(configuration_string)"),
+        scope      => "namespace";
+
+    have_library_configuration_data::
+      "$(classkeys)" 
+        expression => "any", 
+        scope      => "namespace";
 
   vars:
-      "library_configuration" data => readjson("$(sys.inputdir)/common_divisions.json", "999999");
-      "library_configuration_string" string => format("%S", library_configuration);
+    file_defined::
+      "configuration_file" string => "$(file)";
 
-      "bkeys" slist => getindices("library_configuration[vars]");
-      "vkeys_$(bkeys)" slist => getindices("library_configuration[vars][$(bkeys)]");
-      "$(vkeys_$(bkeys))" string => nth("library_configuration[vars][$(bkeys)]", $(vkeys));
+    !file_defined::
+      "configuration_file"
+        string => "$(sys.workdir)/inputs/common_divisions.json";
 
-      "ckeys" slist => getindices("library_configuration[classes]");
+    any::
+      "configuration_data"
+        data   => readjson("$(configuration_file)", "999999"),
+        policy => "free";
+
+      "configuration_string"
+        string => format("%S",configuration_data),
+        policy => "free";
+
+      "classkeys"
+        slist => getindices("configuration_data[classes]"),
+        policy => "free";
+
+      "varkeys"
+        slist => getindices("configuration_data[vars]"),
+        policy => "free";
+
+      "$(varkeys)"
+        string => "$(configuration_data[vars][$(varkeys)])",
+        policy => "free";
 
   reports:
-    DEBUG|DEBUG_library_configuration_load::
+    DEBUG|DEBUG_library_configuration::
       "DEBUG $(this.bundle): Library 'common_divisions'";
-      "DEBUG $(this.bundle): Got library_configuration data from $(file): $(library_configuration_string)"
+
+      "DEBUG $(this.bundle): Got library_configuration data from $(file): $(configuration_string)"
         ifvarclass => "have_library_configuration_data";
-      "DEBUG $(this.bundle): Got library_configuration key = $(vkeys_$(bkeys)), library_configuration value = $((vkeys_$(bkeys)))"
+
+      "DEBUG $(this.bundle): Got varkey $(varkeys)"
         ifvarclass => "have_library_configuration_data";
-      "DEBUG $(this.bundle): Got library_configuration class = $(ckeys)"
+
+      "DEBUG $(this.bundle): Got variable * $(varkeys) = $(configuration_data[vars][$(varkeys)])"
         ifvarclass => "have_library_configuration_data";
-      "DEBUG $(this.bundle): Could not read the library_configuration data from $(file)"
+
+      "DEBUG $(this.bundle): Got common_divisions:library_configuration.v1 is $(common_divisions:library_configuration.v1)"
+        ifvarclass => "have_library_configuration_data";
+
+      "DEBUG $(this.bundle): Got library_configuration class = $(classkeys)"
+        ifvarclass => "have_library_configuration_data";
+
+    !have_library_configuration_data::
+      "ERROR $(this.bundle): Could not read the library_configuration data from $(configuration_file)"
         ifvarclass => "!have_library_configuration_data";
 }
