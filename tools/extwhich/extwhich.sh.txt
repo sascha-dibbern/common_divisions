@@ -1,0 +1,4 @@
+#!/bin/bash
+
+PATH=$EXTPATH
+which $1

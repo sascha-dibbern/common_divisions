@@ -1,0 +1,100 @@
+#
+# *cfdivisions_bundlesequence = artefacts,artefacts_hub
+# *cfdivisions_depends = specific_users
+#
+
+bundle common artefacts
+{
+  vars:
+    "location"    
+     string  => "/var/repositories/artefact",
+     comment => "The artefacts directory on the policy host",
+     handle  => "vars_artefacts_location";
+
+    "hub"
+      string  => "$(sys.policy_hub)",
+      comment => "The artefacts host",
+      handle  => "vars_artefacts_hub";
+}
+
+bundle agent artefacts_update(source,destination,mode,user,group,class)
+{
+
+ files:
+   "$(destination)"
+     comment      => "Copy recursively artefacts $(destination) from artefacts source $(source) on policy server if a new validation was acquired",
+     handle       => "artefacts_update",
+     copy_from    => artefacts_rcp("$(artefacts.location)/$(source)","$(artefacts.hub)"),
+     depth_search => artefacts_recurse("inf"),
+     file_select  => artefacts_input_files,
+     perms        => mog("$(mode)","$(user)","$(group)"),
+     action       => artefacts_immediate,
+     classes      => artefacts_promise_state("$(class)");
+}
+
+bundle agent artefacts_update_file(source,destination,mode,user,group,class)
+{
+
+ files:
+   "$(destination)"
+     comment      => "Copy an artefact $(destination) from artefacts source $(source)on policy server if a new validation was acquired",
+     handle       => "artefacts_update_files",
+     copy_from    => artefacts_rcp("$(artefacts.location)/$(source)","$(artefacts.hub)"),
+     file_select  => artefacts_input_files,
+     perms        => mog("$(mode)","$(user)","$(group)"),
+     action       => artefacts_immediate,
+     classes      => artefacts_promise_state("$(class)");
+}
+
+bundle agent artefacts_hub
+{
+  files:
+    am_policy_hub::
+      "$(artefacts.location)/"
+        create       => "true",
+        perms        => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        depth_search => artefacts_recurse("inf");
+}
+
+bundle server artefacts_hub_access_rules
+{
+  access:
+    any::
+      "$(artefacts.location)"
+        handle  => "artefacts_hub_access_rules",
+        comment => "Grant access to the policy updates",
+        admit   => { ".*$(def.domain)", @(def.acl) };
+}
+
+body action artefacts_immediate
+{
+  ifelapsed => "0";
+}
+
+body copy_from artefacts_rcp(from,server)
+{
+  source   => "$(from)";
+  compare  => "digest";
+  trustkey => "false";
+
+  !am_policy_hub::
+    servers => { "$(server)" };
+}
+
+body file_select artefacts_input_files
+{
+  leaf_name   => { ".*" };
+  file_result => "leaf_name";
+}
+
+body depth_search artefacts_recurse(d)
+{
+  depth        => "$(d)";
+  exclude_dirs => { "\.svn", "\.git" };
+}
+
+body classes artefacts_promise_state(x)
+{
+  promise_repaired => { "$(x)_repaired" };
+  promise_kept     => { "$(x)_kept" };
+}

@@ -1,0 +1,100 @@
+#
+# *cfdivisions_bundlesequence = securedfiles,securedfiles_hub
+# *cfdivisions_depends = 
+#
+
+bundle common securedfiles
+{
+  vars:
+    "location"    
+     string  => "/var/cfengine/securedfiles",
+     comment => "The secured files cfengine directory on the policy host",
+     handle  => "vars_securedfiles_location";
+
+    "hub"
+      string  => "$(sys.policy_hub)",
+      comment => "The secured files cfengine directory on the policy host",
+      handle  => "vars_securedfiles_hub";
+}
+
+bundle agent securedfiles_update(source,destination,mode,user,group,class)
+{
+
+ files:
+   "$(destination)"
+     comment      => "Copy secured files $(destination) from securedfiles source $(source) on policy server if a new validation was acquired",
+     handle       => "securedfiles_update",
+     copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
+     depth_search => securedfiles_recurse("inf"),
+     file_select  => securedfiles_input_files,
+     perms        => mog("$(mode)","$(user)","$(group)"),
+     action       => securedfiles_immediate,
+     classes      => securedfiles_promise_state("$(class)");
+}
+
+bundle agent securedfiles_update_file(source,destination,mode,user,group,class)
+{
+
+ files:
+   "$(destination)"
+     comment      => "Copy secured file $(destination) from securedfiles source $(source)on policy server if a new validation was acquired",
+     handle       => "securedfiles_update_files",
+     copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
+     file_select  => securedfiles_input_files,
+     perms        => mog("$(mode)","$(user)","$(group)"),
+     action       => securedfiles_immediate,
+     classes      => securedfiles_promise_state("$(class)");
+}
+
+bundle agent securedfiles_hub
+{
+  files:
+    am_policy_hub::
+      "$(securedfiles.location)/"
+        create       => "true",
+        perms        => mog("600","root","root"),
+        depth_search => securedfiles_recurse("inf");
+}
+
+bundle server securedfiles_hub_access_rules
+{
+  access:
+    any::
+      "$(securedfiles.location)"
+        handle  => "securedfiles_hub_access_rules",
+        comment => "Grant access to the policy updates",
+        admit   => { ".*$(def.domain)", @(def.acl) };
+}
+
+body action securedfiles_immediate
+{
+  ifelapsed => "0";
+}
+
+body copy_from securedfiles_rcp(from,server)
+{
+  source   => "$(from)";
+  compare  => "digest";
+  trustkey => "false";
+
+  !am_policy_hub::
+    servers => { "$(server)" };
+}
+
+body file_select securedfiles_input_files
+{
+  leaf_name   => { ".*" };
+  file_result => "leaf_name";
+}
+
+body depth_search securedfiles_recurse(d)
+{
+  depth        => "$(d)";
+  exclude_dirs => { "\.svn", "\.git" };
+}
+
+body classes securedfiles_promise_state(x)
+{
+  promise_repaired => { "$(x)_repaired" };
+  promise_kept     => { "$(x)_kept" };
+}

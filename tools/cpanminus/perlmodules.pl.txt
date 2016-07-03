@@ -1,0 +1,24 @@
+#!/usr/bin/perl
+
+my $cachefile=$ARGV[0];
+die "No cachefile defined!!!" unless $cachefile;
+
+my @modulelines;
+if (-e $cachefile) {
+    open $IN,"<".$cachefile;
+    @modulelines=<$IN>;
+    close $IN;
+} else {
+    open $OUT,">".$cachefile;
+    my $query=qx/pmall/;    
+    my @lines=split /\n/,$query;
+    my @names=grep { /.*\(\d+\.*\d*\)/ } @lines;
+    @modulelines=map { 
+	/(.*)\s\((\d+\.*\d*)\)/;
+	$_="$1;$2\n"; 
+	print $OUT $_;
+	$_; 
+    } sort @names; 
+    close $OUT;
+}
+map { print } @modulelines;

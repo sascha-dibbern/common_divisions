@@ -1,0 +1,36 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends = 
+#
+
+bundle common virtualmachine
+{
+  classes:
+    "vmware_toolbox" expression => fileexists("/usr/bin/vmware-toolbox");
+    "vmware_mac_address" or => {
+      classmatch("mac_00_0c_29_.*"),
+      classmatch("mac_00_50_56_.*")
+    }; 
+
+    "vmware_virtualmachine" or => {
+      "vmware_toolbox",
+      "vmware_mac_address",
+    }; 
+
+    "qemu_mac_address" or => {
+      classmatch("mac_52_54_00_.*"),
+    }; 
+
+    "qemu_virtualmachine" or => {
+      "qemu_mac_address",
+    }; 
+
+    "virtualmachine" or => { 
+      "vmware_virtualmachine",
+      "qemu_virtualmachine",
+    };
+
+  reports:
+    virtualmachine::
+      "Running on a virtual machine.";
+}

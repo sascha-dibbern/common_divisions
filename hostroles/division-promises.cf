@@ -1,0 +1,32 @@
+#
+# *cfdivisions_bundlesequence = hostroles_init
+# *cfdivisions_depends = specific_users
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle agent hostroles_init
+{
+  vars:
+    "modules_dir" 
+      string  => translatepath("$(sys.workdir)/modules"),
+      comment => "Directory containing Cfengine modules";
+
+  files:
+    linux::
+      "$(modules_dir)/hostroles"
+        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[hostroles])/hostroles.txt"),
+        classes   => if_repaired("hostroles_module_updated"),
+        comment   => "Update hostroles module";
+
+}
+
+bundle common hostroles
+{
+  classes:
+      "hostroles" expression => usemodule ("hostroles","--rolesfile=$(environments.hostroles)");
+}

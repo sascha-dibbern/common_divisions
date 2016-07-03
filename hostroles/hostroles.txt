@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use Getopt::Long;
+use Sys::Hostname;
+
+my $arg_rolesfile;
+
+GetOptions (
+    "rolesfile=s"  => \$arg_rolesfile,
+    );
+
+die "File $arg_rolesfile does not exist " if (! -e $arg_rolesfile);
+
+my $hostname=hostname;
+
+my %plusroles;
+my %minusroles;
+open FH,"<".$arg_rolesfile;
+while(<FH>) {
+  chomp;
+  next if /^#/;
+  my ($hostrule,$role)=split /;/;
+  $role=~s/\s+//g; # remove any spaces
+  if ($hostname=~/$hostrule/) {
+    if($role=~/^-.*/) {
+      $minusroles{$role}=1;
+    } else {
+      $plusroles{$role}=1;
+    }
+  }
+}
+
+foreach my $role (keys %plusroles) {
+  print "+$role\n";
+}
+foreach my $role (keys %minusroles) {
+  print "$role\n";
+}

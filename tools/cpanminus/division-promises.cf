@@ -1,0 +1,148 @@
+#
+# *cfdivisions_bundlesequence = cpanminus_tools_setup,cpanminus_setup,perlmoduletest_delete
+# *cfdivisions_depends = specific_users,tools,tools_extwhich
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle common pmtools
+{
+  vars:
+    (rhel|centos|fedora)::
+      "pmtoolspackage" 
+        string => "pmtools-1.30";
+
+      "pmall" 
+        string => execresult("$(extwhich.script) pmall","useshell");
+
+  classes:
+    (rhel|centos|fedora)::
+      "no_pmall_exists" 
+        expression => regcmp(".+no\s+pmall.*","$(pmall)");
+}
+
+bundle common perlmodules
+{
+  vars:
+    (rhel|centos|fedora)::
+      "script" 
+        string => "$(sys.workdir)/bin/perlmodules.pl";
+      "cache" 
+        string => "/tmp/perlmodules";
+}
+
+bundle common cpanminus
+{
+  vars:
+    (rhel|centos|fedora)::
+      "cpanm" 
+        string => execresult("$(extwhich.script) cpanm","useshell");
+
+  classes:
+    (rhel|centos|fedora)::
+      "no_cpanminus_exists" 
+        expression => regcmp(".+no\s+cpanm.*","$(cpanm)");
+}
+
+body contain pmtools_build
+{
+    chdir => "/tmp/$(pmtools.pmtoolspackage)";
+}
+
+bundle agent cpanminus_tools_setup 
+{
+  vars:
+      "tar"  
+        string => execresult("/usr/bin/which tar","noshell");
+      "perl" 
+        string => execresult("/usr/bin/which perl","noshell");
+      "make" 
+        string => execresult("/usr/bin/which make","noshell");
+
+  commands:
+    no_pmall_exists.(rhel|centos|fedora)::
+      "$(tar) -xz -C /tmp -f $(cfdivisions.division_path[cpanminus])/$(pmtools.pmtoolspackage).tar.gz.dat";
+      "$(perl) Makefile.PL" 
+         contain => pmtools_build;
+      "$(make) install"     
+         contain => pmtools_build;
+
+  files:
+      "$(perlmodules.script)"
+        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[cpanminus])/perlmodules.pl.txt"),
+        classes   => if_repaired("perlmodules_script_updated"),
+        comment   => "Update perlmodules.pl script";
+
+  reports:
+    no_pmall_exists::
+      ". no_pmall_exists $(pmtools.pmall)";    
+}
+
+body contain cpanminus_setup_command
+{
+    useshell => "true";
+}
+
+
+bundle agent cpanminus_setup 
+{
+  vars:
+      "curl" string => execresult("/usr/bin/which curl","noshell");
+      "perl" string => execresult("/usr/bin/which perl","noshell");
+
+  commands:
+    no_cpanminus_exists.(rhel|centos|fedora)::
+      "$(curl) -L http://cpanmin.us | $(perl) - App::cpanminus"
+        contain => cpanminus_setup_command;
+
+  reports:
+    no_cpanminus_exists::
+      ". no_cpanminus_exists $(cpanminus.cpanm)";
+}
+
+body package_method cpanminus
+{
+    package_changes              => "individual";
+    package_add_command          => "/bin/rm -f $(perlmodules.cache);$(cpanminus.cpanm) -i --force";
+    package_delete_command       => "/bin/rm -f $(perlmodules.cache);$(cpanminus.cpanm) -U --force";
+    package_list_command         => "$(perlmodules.script) $(perlmodules.cache)";
+    package_list_name_regex      => "^([^\s]+);"; # first field before ' ; '
+    package_list_version_regex   => ";([^\s]+)$"; # second field after ' ; '
+    package_installed_regex      => ".*"; 
+    package_name_convention      => "$(name)@$(version)";
+    package_delete_convention    => "$(name)";
+}
+
+#
+# Tests
+#
+
+bundle agent perlmoduletest_add
+{
+  packages:
+      "Image::PNG"
+         package_policy  => "add",
+         package_method  => cpanminus,
+         package_version => "0.19";
+}
+
+bundle agent perlmoduletest_addupdate
+{
+  packages:
+      "Image::PNG"
+         package_policy  => "addupdate",
+         package_method  => cpanminus,
+         package_version => "0.20";
+}
+
+bundle agent perlmoduletest_delete
+{
+  packages:
+      "Image::PNG"
+         package_policy  => "delete",
+         package_method  => cpanminus;
+}

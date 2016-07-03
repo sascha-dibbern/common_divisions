@@ -1,0 +1,23 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends =
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle common qnap
+{
+  classes:
+    "qnap" expression => fileexists("/etc/config/qpkg.conf");
+
+  vars:
+    qnap::
+      "optware_path" string => "/share/MD0_DATA/.qpkg/Optware";
+
+  reports:
+    qnap::
+      "Running on a QNAP machine.";
+}

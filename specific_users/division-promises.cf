@@ -1,0 +1,21 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends = vendor
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle common specific_users
+{
+  vars:
+    linux.!qnap::
+      "superuser"              string => "root";
+      "supergroup"             string => "root";
+
+    linux.qnap::
+      "superuser"              string => "admin";
+      "supergroup"             string => "administrators";
+}

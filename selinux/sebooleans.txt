@@ -1,0 +1,11 @@
+#!/usr/bin/perl 
+
+open(FH,"getsebool -a|");
+while(<FH>) {
+  chomp;
+  my ($name,$value)=split /\s-->\s/;
+  print "+selinux_boolean_".$name."\n" if $value=~/on/;
+  print "-selinux_boolean_".$name."\n" if $value=~/off/;
+}
+close FH;
+

@@ -1,0 +1,4 @@
+#
+# *cfdivisions_bundlesequence = hostroles_init
+# *cfdivisions_depends = library_configuration,vendor_qnap
+#

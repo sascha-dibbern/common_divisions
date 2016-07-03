@@ -1,0 +1,23 @@
+#
+# *cfdivisions_bundlesequence = workarounds_setup
+# *cfdivisions_depends = specific_users
+#
+
+bundle common extwhich
+{
+  vars:
+    (rhel|centos|fedora)::
+      "script" 
+        string => "$(sys.workdir)/bin/extwhich.sh";
+}
+
+bundle agent workarounds_setup 
+{
+  files:
+    linux::
+      "$(extwhich.script)"
+        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[workarounds])/extwhich.sh.txt"),
+        classes   => if_repaired("extwhich_script"),
+        comment   => "Update extwhich script";
+}

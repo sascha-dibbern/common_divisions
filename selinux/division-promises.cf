@@ -1,0 +1,109 @@
+#
+# *cfdivisions_bundlesequence = selinux_init,selinux_booleans
+# *cfdivisions_depends = specific_users,tools
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle agent selinux_init
+{
+  classes:
+    rhel|centos|fedora::
+      "selinux_available"
+         expression => any;
+
+  vars:
+    selinux_available::
+      "modules_dir" 
+        string  => translatepath("$(sys.workdir)/modules"),
+        comment => "Directory containing Cfengine modules";
+
+  files:
+    # Install sebooleans module
+    selinux_available::
+      "$(modules_dir)/sebooleans"
+        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[selinux])/sebooleans.txt"),
+        classes   => if_repaired("sebooleans_module_updated"),
+        comment   => "Update sebooleans module";
+}
+
+bundle common selinux_booleans
+{
+  classes:
+    # Run sebooleans module and extract the se-booleans
+    selinux_available::
+      "selinux_booleans" expression => usemodule ("sebooleans","");
+}
+
+body contain selinux_command
+{
+    useshell   => "no";
+    exec_owner => "$(specific_users.superuser)";
+}
+
+body classes changed_seboolean(name) 
+{
+    promise_kept => { canonify("selinux_boolean_$(name)_changed") };
+}
+
+bundle agent selinux_boolean_on(name)
+{
+  classes:
+    selinux_available::
+      "boolean_is_on" 
+        expression => "selinux_boolean_$(name)";
+
+      "selinux_booleans_updated"
+        ifvarclass => canonify("selinux_boolean_$(name)_changed"),
+        expression => usemodule ("sebooleans","");
+
+  commands:
+    selinux_available.!boolean_is_on::
+      "/usr/sbin/setsebool -P $(name) 1"
+        comment => "Set SE boolean $(name) to 1",
+        contain => selinux_command,
+	classes => changed_seboolean("$(name)");
+
+#      "/usr/bin/perl $(cfdivisions.division_path[selinux])/sebooleans.pl"
+#        module  => "true",
+#        contain => selinux_command;
+
+  reports:
+    selinux_available::
+#    development::
+      "Toogled se-boolean $(name) to on"
+        ifvarclass => canonify("selinux_boolean_$(name)_changed");
+}
+
+bundle agent selinux_boolean_off(name)
+{
+  classes:
+    selinux_available::
+      "boolean_is_off" 
+        not => "selinux_boolean_$(name)";
+
+      "selinux_booleans_updated"
+        ifvarclass => canonify("selinux_boolean_$(name)_changed"),
+        expression => usemodule ("sebooleans","");
+
+  commands:
+    selinux_available.!boolean_is_off::
+      "/usr/sbin/setsebool -P $(name) 0"
+        comment => "Set SE boolean $(name) to 0",
+        contain => selinux_command,
+	classes => changed_seboolean("$(name)");
+
+#      "/usr/bin/perl $(cfdivisions.division_path[selinux])/sebooleans.pl"
+#        module  => "true",
+#        contain => selinux_command;
+
+  reports:
+    selinux_available::
+#    development::
+      "Toogled se-boolean $(name) to off"
+        ifvarclass => canonify("selinux_boolean_$(name)_changed");
+}
