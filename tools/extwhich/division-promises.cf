@@ -1,7 +1,13 @@
 #
 # *cfdivisions_bundlesequence = workarounds_setup
-# *cfdivisions_depends = specific_users
+# *cfdivisions_depends = specific_users,cfengine
 #
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
 
 bundle common extwhich
 {
@@ -11,13 +17,13 @@ bundle common extwhich
         string => "$(sys.workdir)/bin/extwhich.sh";
 }
 
-bundle agent workarounds_setup 
+bundle agent extwhich_setup 
 {
   files:
     linux::
       "$(extwhich.script)"
         perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
-        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[workarounds])/extwhich.sh.txt"),
+        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[workarounds])/extwhich.sh.dat"),
         classes   => if_repaired("extwhich_script"),
         comment   => "Update extwhich script";
 }
