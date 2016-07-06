@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = main
+# *cfdivisions_bundlesequence = main_library_configuration
 # *cfdivisions_depends = 
 #
 
@@ -8,7 +8,7 @@ body file control
     namespace => "common_divisions";
 }
 
-bundle agent main
+bundle agent main_library_configuration
 {
   methods:
     "configuration" usebundle => library_configuration("");
@@ -72,9 +72,6 @@ bundle agent library_configuration(file)
         ifvarclass => "have_library_configuration_data";
 
       "DEBUG $(this.bundle): Got variable * $(varkeys) = $(configuration_data[vars][$(varkeys)])"
-        ifvarclass => "have_library_configuration_data";
-
-      "DEBUG $(this.bundle): Got common_divisions:library_configuration.v1 is $(common_divisions:library_configuration.v1)"
         ifvarclass => "have_library_configuration_data";
 
       "DEBUG $(this.bundle): Got library_configuration class = $(classkeys)"
