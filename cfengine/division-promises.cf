@@ -1,0 +1,140 @@
+#
+# *cfdivisions_bundlesequence = cfengine_id
+# *cfdivisions_depends = specific_users,tools
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+# Definition regarnding cf-engine setup
+bundle common cfengine_spec
+{
+  vars:
+   cfengine::
+    "inputs_path" 
+      string => "$(sys.workdir)/inputs";
+
+    "modules_path" 
+      string => "$(sys.workdir)/modules";
+
+    "bin_path" 
+      string => "$(sys.workdir)/bin";
+}
+
+body contain cfengine_direct_shell_command
+{
+  useshell => "useshell";
+}
+
+# Identities under cfengine scope
+bundle agent cfengine_id
+{
+  vars:
+    any::
+      "user"    string => "$(id.user)"; 
+      "userid"  string => "$(id.userid)"; 
+      "group"   string => "$(id.group)"; 
+      "groupid" string => "$(id.groupid)"; 
+
+  commands:
+    any::
+      "id -n -u | perl -nle 'print q/=user=/.$_'"
+        contain => cfengine_direct_shell_command,
+        module  => "true";
+      
+      "id -u | perl -nle 'print q/=userid=/.$_'"
+        contain => cfengine_direct_shell_command,
+        module  => "true";
+      
+      "id -n -g | perl -nle 'print q/=group=/.$_'"
+        contain => cfengine_direct_shell_command,
+        module  => "true";      
+
+      "id -g | perl -nle 'print q/=groupid=/.$_'"
+        contain => cfengine_direct_shell_command,
+        module  => "true";      
+
+  reports:
+    DEBUG|DEBUG_cfengine::
+      "DEBUG $(this.bundle): id.user=$(id.user):id.group=$(id.group)";
+      "DEBUG $(this.bundle): cfengine_id.user=$(cfengine_id.user):cfengine_id.group=$(cfengine_id.group)";
+      "DEBUG $(this.bundle): cfengine_id.userid=$(cfengine_id.userid):cfengine_id.groupid=$(cfengine_id.groupid)";
+}
+
+body perms cfengine_user_perms(mode)
+{
+    owners => { "$(cfengine_id.user)" };
+    groups => { "$(cfengine_id.group)" };
+    mode   => "$(mode)";
+}
+
+body copy_from compare_backup_local_cp(from)
+{
+    source      => "$(from)";
+    copy_backup => "timestamp";
+    compare     => "digest";
+}
+
+# Update a cf-engine module
+bundle agent cfengine_module_update(source,modulename)
+{
+  files:
+    linux::
+      "$(cfengine_spec.modules_path)/$(modulename)"
+        perms     => cfengine_user_perms("750"),
+        copy_from => compare_backup_local_cp("$(source)"),
+        classes   => default:if_repaired("$(modulename)_module_updated"),
+        comment   => "Update $(modulename) module";
+
+  reports:
+    any::
+      "Updated cfengine module $(modulename) module from $(source)"
+        ifvarclass => "$(modulename)_module_updated";
+}
+
+# Update a cf-engine module based on the origin division
+bundle agent cfengine_division_module_update(division_library,source_division,modulename)
+{
+  vars:
+   "modulepath"
+     string => "$(cfdivisions.$(division_library)_path[$(source_division)])/$(modulename).dat";
+
+  methods:
+    "update" 
+      usebundle => cfengine_module_update($(modulepath),$(modulename));
+}
+
+# Update a cf-engine binary
+bundle agent cfengine_binary_update(source,binary)
+{
+  vars:
+      "canonified_binary"
+        string => canonify("$(binary)");
+
+  files:
+    linux::
+      "$(cfengine_spec.bin_path)/$(binary)"
+        perms     => cfengine_user_perms("750"),
+        copy_from => compare_backup_local_cp("$(source)"),
+        classes   => default:if_repaired("$(canonified_binary)_binary_updated"),
+        comment   => "Update $(binary) binary";
+
+  reports:
+    any::
+      "Updated cfengine binary $(binary) ($(canonified_binary)) from $(source)"
+        ifvarclass => "$(canonified_binary)_binary_updated";
+}
+
+# Update a cf-engine binary based on the origin division
+bundle agent cfengine_division_binary_update(division_library,source_division,binary)
+{
+  vars:
+   "binary_path"
+     string => "$(cfdivisions.$(division_library)_path[$(source_division)])/$(binary).dat";
+
+  methods:
+    "update" 
+      usebundle => cfengine_binary_update($(binary_path),$(binary));
+}

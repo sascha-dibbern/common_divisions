@@ -1,0 +1,96 @@
+bundle common cfengine_stdlib
+{
+  vars:
+    cfengine_3_5::
+      # 3.5 doesn't have "body file control" so all the includes are listed here
+      "inputs" slist => {
+                          "lib/3.5/paths.cf",
+                          "lib/3.5/common.cf",
+                          "lib/3.5/commands.cf",
+                          "lib/3.5/packages.cf",
+                          "lib/3.5/files.cf",
+                          "lib/3.5/services.cf",
+                          "lib/3.5/processes.cf",
+                          "lib/3.5/storage.cf",
+                          "lib/3.5/databases.cf",
+                          "lib/3.5/monitor.cf",
+                          "lib/3.5/guest_environments.cf",
+                          "lib/3.5/bundles.cf",
+                          "lib/3.5/cfe_internal.cf",
+      };
+
+    !cfengine_3_5::
+      # CFEngine 3.6 and higher can include through a secondary file
+      "inputs" slist => { "../../$(sys.local_libdir)/stdlib.cf" };
+
+  reports:
+    any::
+     "common cfengine_stdlib $(sys.local_libdir)";
+    #verbose_mode::
+      "$(this.bundle): defining inputs='$(inputs)'";
+}
+
+bundle common divisions
+{
+  classes:
+    !common_divisions::
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=cfengine");
+}
+
+
+body common control
+{
+      inputs => {
+                 @(cfengine_stdlib.inputs),
+                 @(cfdivisions.cfdivisions_common_divisions_inputs)
+      };
+
+      bundlesequence => {
+                          @(cfdivisions.cfdivisions_common_divisions_bundlesequence),
+                         cleanup_testdata,
+                         test_module_update,
+                         test_binary_update
+      };
+}
+
+bundle agent cleanup_testdata
+{
+  files:
+      "$(common_divisions:cfengine_spec.modules_path)/mockmodule"
+        delete => tidy;
+
+      "$(common_divisions:cfengine_spec.bin_path)/mockbin.pl"
+        delete => tidy;
+  reports:
+    "Delete test data $(common_divisions:cfengine_spec.modules_path)/mockmodule $(common_divisions:cfengine_spec.bin_path)/mockbin.pl";
+}
+
+bundle agent test_module_update
+{
+  methods:
+    "update" 
+        usebundle => common_divisions:cfengine_division_module_update("common_divisions","cfengine","mockmodule");
+
+  reports:
+    any::
+     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+    common_divisions:mockmodule_module_updated::
+      "    ok - Module updated";
+    !common_divisions:mockmodule_module_updated::
+      "    not ok - Module updated";
+}
+
+bundle agent test_binary_update
+{
+  methods:
+    "update" 
+        usebundle => common_divisions:cfengine_division_binary_update("common_divisions","cfengine","mockbin.pl");
+
+  reports:
+    any::
+     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+    common_divisions:mockbin_pl_binary_updated::
+      "    ok - Binary updated";
+    !common_divisions:mockbin_pl_binary_updated::
+      "    not ok - Binary updated";
+}
