@@ -13,6 +13,9 @@ bundle common cfengine_spec
 {
   vars:
    cfengine::
+    "masterfiles_path" 
+      string => "$(sys.workdir)/masterfiles";
+
     "inputs_path" 
       string => "$(sys.workdir)/inputs";
 
