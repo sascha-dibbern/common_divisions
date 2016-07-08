@@ -1,39 +1,47 @@
 #
 # *cfdivisions_bundlesequence = gitbased_masterfiles
-# *cfdivisions_depends = library_configuration
+# *cfdivisions_depends = library_configuration,cfengine
 #
+# common_divisions:gitbased_masterfiles_enabled => enable or not this divsions functionality
 
+body file control
+{
+    namespace => "common_divisions";
+}
 
 bundle agent gitbased_masterfiles
 {
   classes:
-    "gitbased_masterfiles_git_branch_defined" 
-       not => strcmp("$(gitbased_masterfiles_git_branch)","");
-    "gitbased_masterfiles_git_source_defined" 
-       not => strcmp("$(gitbased_masterfiles_git_source)","");
-
+    "gitbased_masterfiles_git_branch_library_defined" 
+       not => strcmp("$(library_configuration.gitbased_masterfiles_git_branch)","");
+    "gitbased_masterfiles_git_source_library_defined" 
+       not => strcmp("$(library_configuration.gitbased_masterfiles_git_source)","");
+    
   vars:
-    !gitbased_masterfiles_git_branch_defined::
-      "gitbased_masterfiles_git_branch" string => "master";
+    gitbased_masterfiles_git_branch_library_defined:
+      "git_branch" string => "$(library_configuration.gitbased_masterfiles_git_branch)";
+    !gitbased_masterfiles_git_branch_library_defined:
+      "git_branch" string => "master";
 
-    !gitbased_masterfiles_git_source_defined::
-      "gitbased_masterfiles_git_source" string => "origin";
+    gitbased_masterfiles_git_source_library_defined:
+      "git_source" string => "$(library_configuration.gitbased_masterfiles_git_source)";
+    !gitbased_masterfiles_git_source_library_defined:
+      "git_source" string => "origin";
 
   commands:
-
-  # Handling GIT-pull in masterfiles
-    am_policy_hub::
-      "/usr/bin/git pull $(gitbased_masterfiles_git_source)"
-        contain => gitbased_masterfiles_u_in_dir("$(master_location)"),
+    gitbased_masterfiles_enabled.am_policy_hub::
+      # Handling GIT-pull in masterfiles
+      "/usr/bin/git pull $(git_source)"
+        contain => gitbased_masterfiles_u_in_dir("$(cfengine_spec.masterfiles_path)"),
 	classes => git_pull_masterfiles_ok,
-        comment => "Pull $(master_location) from git repository",
+        comment => "Pull $(cfengine_spec.masterfiles_path) from '$(git_source)' git repository",
         handle  => "git_pull_masterfiles";
 
-  # Handling GIT-checkout in masterfiles
-      "/usr/bin/git checkout $(gitbased_masterfiles_git_branch)"
-        contain => gitbased_masterfiles_u_in_dir("$(master_location)"),
+      # Handling GIT-checkout in masterfiles
+      "/usr/bin/git checkout $(git_branch)"
+        contain => gitbased_masterfiles_u_in_dir("$(cfengine_spec.masterfiles_path)"),
 	classes => git_checkout_masterfiles_ok,
-        comment => "Git checkout $(master_location) branch $(gitbased_masterfiles_git_branch)",
+        comment => "Git checkout $(cfengine_spec.masterfiles_path) branch $(git_branch)",
         handle  => "git_checkout_masterfiles";
 }
 
