@@ -1,0 +1,57 @@
+#!/usr/bin/perl
+
+use v5.14;
+use strict;
+use warnings;
+
+my $logical_name = shift @ARGV;
+$logical_name // die "1. argument (local name) not defined";
+my $map_path     = shift @ARGV;
+$map_path // die "2. argument (path to mapping file) not defined";
+my @replacers    = @ARGV;
+die "No replacers (3. and more argument) defined" if $#replacers == -1 ;
+
+open my $file,"<",$map_path || die "Can not open $map_path";
+my @loaded_lines=<$file>;
+close $file;
+
+my @replaced_lines;
+for my $line (@loaded_lines) {
+    my $count=1;
+    for my $replacer (@replacers) {
+	my $searched = '%'.$count;
+	$line =~ s/$searched/$replacer/;
+	$count++;
+    }
+    chomp $line;
+    push @replaced_lines,$line;
+}
+
+my %mapping = map {
+    # Semicolon based field separation
+    my ($k,$v) = split /;/;
+    die "No value defined for key $k" unless defined $v;
+    $k => $v
+} grep {
+    # Filter out empty lines
+    ! /^\s*$/
+} map { 
+    # Remove comments
+    my ($left_of_comment,@comment) = split /#/
+} @replaced_lines;
+
+if (exists $mapping{$logical_name}) {
+    # Use list based mapping to look up binary
+    my $path = $mapping{$logical_name};
+    if (-x $path) {
+	print $path;
+	exit 0;
+    }
+} else {
+    # use 'which' to look up binary
+    my $path = `which $logical_name`;
+    print $path;
+    exit 0;
+}
+
+exit 1

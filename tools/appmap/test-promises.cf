@@ -1,0 +1,76 @@
+bundle common cfengine_stdlib
+{
+  vars:
+    cfengine_3_5::
+      # 3.5 doesn't have "body file control" so all the includes are listed here
+      "inputs" slist => {
+                          "lib/3.5/paths.cf",
+                          "lib/3.5/common.cf",
+                          "lib/3.5/commands.cf",
+                          "lib/3.5/packages.cf",
+                          "lib/3.5/files.cf",
+                          "lib/3.5/services.cf",
+                          "lib/3.5/processes.cf",
+                          "lib/3.5/storage.cf",
+                          "lib/3.5/databases.cf",
+                          "lib/3.5/monitor.cf",
+                          "lib/3.5/guest_environments.cf",
+                          "lib/3.5/bundles.cf",
+                          "lib/3.5/cfe_internal.cf",
+      };
+
+    !cfengine_3_5::
+      # CFEngine 3.6 and higher can include through a secondary file
+      "inputs" slist => { "../../../$(sys.local_libdir)/stdlib.cf" };
+
+  reports:
+    any::
+     "common cfengine_stdlib $(sys.local_libdir)";
+    #verbose_mode::
+      "$(this.bundle): defining inputs='$(inputs)'";
+}
+
+bundle common divisions
+{
+  classes:
+    !common_divisions::
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=tools_appmap");
+}
+
+body common control
+{
+      inputs => {
+                 @(cfengine_stdlib.inputs),
+                 @(cfdivisions.cfdivisions_common_divisions_inputs)
+      };
+
+      bundlesequence => {
+                          @(cfdivisions.cfdivisions_common_divisions_bundlesequence),
+                         test_appmap
+      };
+}
+
+bundle agent test_appmap
+{
+  classes:
+    any::
+      "appmap_match"
+        expression => regcmp("$(appmap)","/usr/bin/ls");
+
+  vars:
+    any::
+      "appmap" 
+        string => execresult("$(common_divisions:appmap.bin) app $(cfdivisions.common_divisions_path[tools_appmap])/testmap.txt /usr/bin","useshell");
+
+  reports:
+    any::
+#     "$(cfdivisions.common_divisions_path[tools_appmap])";
+#     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+#     "$(common_divisions:appmap.bin)";
+#     "$(appmap)";
+    appmap_match::
+      "    ok - appmap worked";
+    !appmap_match::
+      "    not ok - appmap worked";
+}
+

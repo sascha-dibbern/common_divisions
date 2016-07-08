@@ -1,0 +1,29 @@
+#
+# *cfdivisions_bundlesequence = appmap_setup
+# *cfdivisions_depends = cfengine
+#
+#  Install appmap.pl as a standard cfengine binary
+#
+#  appmap.pl allows the logical abstraction of an application name and path to a logical name
+#  
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle common appmap
+{
+  vars:
+    (rhel|centos|fedora)::
+      "bin" 
+        string => "$(sys.workdir)/bin/appmap.pl";
+}
+
+bundle agent appmap_setup 
+{
+  methods:
+    linux::
+      "update" 
+        usebundle => common_divisions:cfengine_division_binary_update("common_divisions","tools_appmap","appmap.pl");
+}
