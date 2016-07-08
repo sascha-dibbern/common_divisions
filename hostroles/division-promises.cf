@@ -1,6 +1,6 @@
 #
 # *cfdivisions_bundlesequence = hostroles_init
-# *cfdivisions_depends = specific_users
+# *cfdivisions_depends = library_configuration,specific_users
 #
 
 body file control
@@ -28,5 +28,5 @@ bundle agent hostroles_init
 bundle common hostroles
 {
   classes:
-      "hostroles" expression => usemodule ("hostroles","--rolesfile=$(environments.hostroles)");
+      "hostroles" expression => usemodule ("hostroles","--rolesfile=$($(common_divisions:library_configuration.hostroles)");
 }
