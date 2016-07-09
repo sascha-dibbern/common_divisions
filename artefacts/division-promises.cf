@@ -1,6 +1,6 @@
 #
 # *cfdivisions_bundlesequence = artefacts,artefacts_hub
-# *cfdivisions_depends = specific_users
+# *cfdivisions_depends = cfengine
 #
 
 bundle common artefacts
@@ -52,7 +52,7 @@ bundle agent artefacts_hub
     am_policy_hub::
       "$(artefacts.location)/"
         create       => "true",
-        perms        => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
+        perms        => mog("755","$(cfengine_id.user)","$(cfengine_id.group)"),
         depth_search => artefacts_recurse("inf");
 }
 
