@@ -1,12 +1,7 @@
 #!/bin/bash
 
 # Extend the path temporarily before 'which'
-EXTPATH=$2:$PATH
-
-# or keep the old
-if ( "$2" = "" ); then
-  EXTPATH=$2:$PATH
-fi
-PATH=$EXTPATH
+EXTPATH="$2"
+PATH=${EXTPATH:-.}:$PATH
 
 which $1

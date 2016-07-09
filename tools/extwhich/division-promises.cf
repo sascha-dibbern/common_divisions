@@ -1,6 +1,6 @@
 #
-# *cfdivisions_bundlesequence = workarounds_setup
-# *cfdivisions_depends = specific_users,cfengine
+# *cfdivisions_bundlesequence = extwhich_setup
+# *cfdivisions_depends = cfengine
 #
 
 body file control
@@ -13,17 +13,14 @@ bundle common extwhich
 {
   vars:
     (rhel|centos|fedora)::
-      "script" 
-        string => "$(sys.workdir)/bin/extwhich.sh";
+      "bin" 
+        string => "$(cfengine_spec.bin_path)/extwhich.sh";
 }
 
 bundle agent extwhich_setup 
 {
-  files:
+  methods:
     linux::
-      "$(extwhich.script)"
-        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
-        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[workarounds])/extwhich.sh.dat"),
-        classes   => if_repaired("extwhich_script"),
-        comment   => "Update extwhich script";
+      "update" 
+        usebundle => common_divisions:cfengine_division_binary_update("common_divisions","tools_extwhich","extwhich.sh");
 }
