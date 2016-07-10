@@ -3,6 +3,11 @@
 # *cfdivisions_depends = 
 #
 
+body file control
+{
+    namespace => "common_divisions";
+}
+
 bundle common virtualmachine
 {
   classes:
