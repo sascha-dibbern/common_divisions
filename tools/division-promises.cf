@@ -3,6 +3,11 @@
 # *cfdivisions_depends = 
 #
 
+body file control
+{
+    namespace => "common_divisions";
+}
+
 # Local compare, copy, keeping a backup of old versions
 body copy_from compare_backup_local_cp(from)
 {
