@@ -2,3 +2,8 @@
 # *cfdivisions_bundlesequence = 
 # *cfdivisions_depends = library_configuration,vendor_qnap
 #
+
+body file control
+{
+    namespace => "common_divisions";
+}
