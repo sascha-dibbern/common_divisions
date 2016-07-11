@@ -1,20 +1,40 @@
 #
 # *cfdivisions_bundlesequence = artefacts,artefacts_hub
-# *cfdivisions_depends = cfengine
+# *cfdivisions_depends = library_configuration,cfengine
 #
+# library_configuration defined data
+# * artefacts_location => optional: full path to artefacts location on artefacts server. Default '$(sys.workdir)/artefacts'
+
+
+body file control
+{
+    namespace => "common_divisions";
+}
 
 bundle common artefacts
 {
-  vars:
-    "location"    
-     string  => "/var/repositories/artefact",
-     comment => "The artefacts directory on the policy host",
-     handle  => "vars_artefacts_location";
+  classes:
+    "location_defined"
+       not => strcmp("$(library_configuration.artefacts_location)","");
 
-    "hub"
-      string  => "$(sys.policy_hub)",
-      comment => "The artefacts host",
-      handle  => "vars_artefacts_hub";
+  vars:
+    location_defined::
+      "location"
+        string  => "$(library_configuration.artefacts_location)",
+        comment => "The artefacts directory on the policy host",
+        handle  => "vars_artefacts_location";
+
+    !location_defined::
+      "location"
+        string  => "$(sys.workdir)/artefacts",
+        comment => "The artefacts directory on the policy host",
+        handle  => "vars_artefacts_location";
+
+    any::
+      "hub"
+        string  => "$(sys.policy_hub)",
+        comment => "The artefacts host",
+        handle  => "vars_artefacts_hub";
 }
 
 bundle agent artefacts_update(source,destination,mode,user,group,class)
