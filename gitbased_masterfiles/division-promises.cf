@@ -2,7 +2,12 @@
 # *cfdivisions_bundlesequence = gitbased_masterfiles
 # *cfdivisions_depends = library_configuration,cfengine
 #
-# common_divisions:gitbased_masterfiles_enabled => enable or not this divsions functionality
+# External defined data:
+# * common_divisions:gitbased_masterfiles_enabled => enable or not this divisions functionality
+#
+# library_configuration defined data
+# * gitbased_masterfiles_git_branch => optional: git branch of masterfiles. Default 'master'
+# * gitbased_masterfiles_git_source => optional: git source of masterfiles. Default 'origin'
 
 body file control
 {
