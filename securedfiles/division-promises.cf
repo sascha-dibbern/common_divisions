@@ -1,58 +1,76 @@
 #
 # *cfdivisions_bundlesequence = securedfiles,securedfiles_hub
-# *cfdivisions_depends = 
+# *cfdivisions_depends = library_configuration,cfengine
 #
+# library_configuration defined data
+# * securedfiles_location => optional: full path to secured files location on artefacts server. Default '$(sys.workdir)/securedfiles'
+
+body file control
+{
+    namespace => "common_divisions";
+}
 
 bundle common securedfiles
 {
-  vars:
-    "location"    
-     string  => "/var/cfengine/securedfiles",
-     comment => "The secured files cfengine directory on the policy host",
-     handle  => "vars_securedfiles_location";
+  classes:
+    "location_defined"
+       not => strcmp("$(library_configuration.securedfiles_location)","");
 
-    "hub"
-      string  => "$(sys.policy_hub)",
-      comment => "The secured files cfengine directory on the policy host",
-      handle  => "vars_securedfiles_hub";
+  vars:
+    location_defined::
+      "location"
+        string  => "$(library_configuration.securedfiles_location)",
+        comment => "The secured files cfengine directory on the policy host",
+        handle  => "vars_securedfiles_location";
+
+    !location_defined::
+      "location"    
+        string  => "$(sys.workdir)/securedfiles",
+        comment => "The secured files cfengine directory on the policy host",
+        handle  => "vars_securedfiles_location";
+
+    any::
+      "hub"
+        string  => "$(sys.policy_hub)",
+        comment => "The secured files cfengine directory on the policy host",
+        handle  => "vars_securedfiles_hub";
 }
 
 bundle agent securedfiles_update(source,destination,mode,user,group,class)
 {
-
- files:
-   "$(destination)"
-     comment      => "Copy secured files $(destination) from securedfiles source $(source) on policy server if a new validation was acquired",
-     handle       => "securedfiles_update",
-     copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
-     depth_search => securedfiles_recurse("inf"),
-     file_select  => securedfiles_input_files,
-     perms        => mog("$(mode)","$(user)","$(group)"),
-     action       => securedfiles_immediate,
-     classes      => securedfiles_promise_state("$(class)");
+  files:
+    "$(destination)"
+      comment      => "Copy secured files $(destination) from securedfiles source $(source) on policy server if a new validation was acquired",
+      handle       => "securedfiles_update",
+      copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
+      depth_search => securedfiles_recurse("inf"),
+      file_select  => securedfiles_input_files,
+      perms        => mog("$(mode)","$(user)","$(group)"),
+      action       => securedfiles_immediate,
+      classes      => securedfiles_promise_state("$(class)");
 }
 
 bundle agent securedfiles_update_file(source,destination,mode,user,group,class)
 {
-
- files:
-   "$(destination)"
-     comment      => "Copy secured file $(destination) from securedfiles source $(source)on policy server if a new validation was acquired",
-     handle       => "securedfiles_update_files",
-     copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
-     file_select  => securedfiles_input_files,
-     perms        => mog("$(mode)","$(user)","$(group)"),
-     action       => securedfiles_immediate,
-     classes      => securedfiles_promise_state("$(class)");
+  files:
+    "$(destination)"
+      comment      => "Copy secured file $(destination) from securedfiles source $(source)on policy server if a new validation was acquired",
+      handle       => "securedfiles_update_files",
+      copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
+      file_select  => securedfiles_input_files,
+      perms        => mog("$(mode)","$(user)","$(group)"),
+      action       => securedfiles_immediate,
+      classes      => securedfiles_promise_state("$(class)");
 }
 
+# Ensure secured files to only be readable by cfengine user
 bundle agent securedfiles_hub
 {
   files:
     am_policy_hub::
       "$(securedfiles.location)/"
         create       => "true",
-        perms        => mog("600","root","root"),
+        perms        => mog("600","$(cfengine_id.user)","$(cfengine_id.group)"),
         depth_search => securedfiles_recurse("inf");
 }
 
@@ -63,7 +81,7 @@ bundle server securedfiles_hub_access_rules
       "$(securedfiles.location)"
         handle  => "securedfiles_hub_access_rules",
         comment => "Grant access to the policy updates",
-        admit   => { ".*$(def.domain)", @(def.acl) };
+        admit   => { ".*$(default:def.domain)", @(default:def.acl) };
 }
 
 body action securedfiles_immediate
