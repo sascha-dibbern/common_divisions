@@ -73,13 +73,6 @@ body perms cfengine_user_perms(mode)
     mode   => "$(mode)";
 }
 
-body copy_from compare_backup_local_cp(from)
-{
-    source      => "$(from)";
-    copy_backup => "timestamp";
-    compare     => "digest";
-}
-
 # Update a cf-engine module
 bundle agent cfengine_module_update(source,modulename)
 {
