@@ -1,6 +1,12 @@
 #
-# *cfdivisions_bundlesequence = hostroles_init
-# *cfdivisions_depends = library_configuration,specific_users
+# *cfdivisions_bundlesequence = hostroles_module_update,hostroles_defined_by_library_configuration
+# *cfdivisions_depends = library_configuration,cfengine
+#
+# exported bundle
+# * hostroles_run
+#
+# library_configuration defined data
+# * library_configuration.hostroles_location
 #
 
 body file control
@@ -8,25 +14,118 @@ body file control
     namespace => "common_divisions";
 }
 
-bundle agent hostroles_init
-{
-  vars:
-    "modules_dir" 
-      string  => translatepath("$(sys.workdir)/modules"),
-      comment => "Directory containing Cfengine modules";
-
-  files:
-    linux::
-      "$(modules_dir)/hostroles"
-        perms     => mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
-        copy_from => compare_backup_local_cp("$(cfdivisions.division_path[hostroles])/hostroles.txt"),
-        classes   => if_repaired("hostroles_module_updated"),
-        comment   => "Update hostroles module";
-
-}
-
-bundle common hostroles
+bundle agent hostroles_configuration(hostroles_configuration_location,hostroles_hostname_override)
 {
   classes:
-      "hostroles" expression => usemodule ("hostroles","--rolesfile=$($(common_divisions:library_configuration.hostroles)");
+    any::
+      "hostroles_configuration_location_defined"
+        not => strcmp($(hostroles_configuration_location),""),
+        scope => "namespace";
+
+      "hostroles_hostname_override_defined"
+        not => strcmp($(hostroles_hostname_override),"");
+
+  vars:
+    hostroles_configuration_location_defined::
+      "location"
+        string  => "$(hostroles_configuration_location)",
+        comment => "The location of the hostrole configuration",
+        handle  => "vars_hostrole_location";
+
+    !hostroles_configuration_location_defined::
+      "location"
+        string  => "hostroles.txt",
+        comment => "The location of the hostrole configuration",
+        handle  => "vars_hostrole_location";
+
+    any::
+      "path"
+        string  => "$(cfengine_spec.inputs_path)/$(location)";
+
+    hostroles_hostname_override_defined::
+      "hostname_argument"
+        string  => "--hostname=$(hostroles_hostname_override)";
+
+    !hostroles_hostname_override_defined::
+      "hostname_argument"
+        string  => "";
+
+  reports:
+    (DEBUG|DEBUG_hostroles).hostroles_configuration_location_defined::
+      "hostroles_configuration_location_defined";
+
+    (DEBUG|DEBUG_hostroles).!hostroles_configuration_location_defined::
+      "no hostroles_configuration_location_defined";
+
+    (DEBUG|DEBUG_hostroles)::
+      "location: $(location)";
+      "path: $(path)";
 }
+
+bundle agent hostroles_defined_by_library_configuration
+{
+  classes:
+    any::
+      "hostroles_configuration_defined_by_library_configuration"
+        not => strcmp($(library_configuration.hostroles_location),""),
+        scope => "namespace";
+
+  methods:
+    hostroles_configuration_defined_by_library_configuration::
+      "defined_configuration" 
+        usebundle => common_divisions:hostroles_configuration($(library_configuration.hostroles_location),"");
+
+  reports:
+    (DEBUG|DEBUG_hostroles).hostroles_configuration_defined_by_library_configuration::
+      "hostroles_configuration_defined_by_library_configuration";
+
+    (DEBUG|DEBUG_hostroles).!hostroles_configuration_defined_by_library_configuration::
+      "no hostroles_configuration_defined_by_library_configuration";
+}
+
+bundle agent hostroles_module_update
+{
+  methods:
+    linux::
+      "update" 
+        usebundle => common_divisions:cfengine_division_module_update("common_divisions","hostroles","hostroles");
+}
+
+bundle agent hostroles_run
+{
+  classes:
+    any::
+      "hostroles_module_exists"
+        expression => fileexists("$(cfengine_spec.modules_path)/hostroles"),
+        scope      => "namespace";
+
+      "hostroles_configuration_exists"
+        expression => fileexists("$(hostroles_configuration.path)"),
+        scope      => "namespace";
+
+    hostroles_module_exists::
+      "hostroles_module_executed" 
+        expression => usemodule ("hostroles","--rolesfile=$(common_divisions:hostroles_configuration.path) $(common_divisions:hostroles_configuration.hostname_argument)"),
+        scope      => "namespace";
+
+  reports:
+    (DEBUG|DEBUG_hostroles).hostroles_module_exists::
+      "hostroles_module_exists";
+    !(DEBUG|DEBUG_hostroles).hostroles_module_exists::
+      "no hostroles_module_exists";
+
+    (DEBUG|DEBUG_hostroles).hostroles_module_executed::
+      "hostroles_module_executed";
+    !(DEBUG|DEBUG_hostroles).hostroles_module_executed::
+      "no hostroles_module_executed";
+
+    test1::
+      "test1";
+    !test1::
+      "!test1";
+    test2::
+      "test2";
+    !test2::
+      "!test2";
+}
+

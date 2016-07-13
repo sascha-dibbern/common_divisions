@@ -1,0 +1,57 @@
+#!/usr/bin/perl
+
+use Getopt::Long;
+use Sys::Hostname;
+
+my $arg_hostname;
+my $arg_rolesfile;
+
+GetOptions (
+    "hostname:s"   => \$arg_hostname,
+    "rolesfile=s"  => \$arg_rolesfile,
+    );
+
+die "File $arg_rolesfile does not exist " if (! -e $arg_rolesfile);
+
+my $hostname=$arg_hostname || hostname;
+
+my %plusroles,%minusroles;
+
+open FH,"<".$arg_rolesfile;
+while(<FH>) {
+  chomp;
+
+  # skip empty lines
+  next unless /^\w/;
+
+  # skip comments
+  next if /^#/;
+
+  my ($hostrule,$role)=split /\s*;\s*/;
+  $role=~s/\s+//g; # remove any spaces
+  if ($hostname=~/$hostrule/) {
+    if($role=~/^-.*/) {
+	$role =~ s/-//;
+	$minusroles{$role}=1;
+    } else {
+	$role =~ s/\+//;
+	$plusroles{$role}=1;
+    }
+  }
+}
+
+# Eliminate +/- roles
+for my $role (keys %minusroles) {
+    delete $plusroles{$role};
+    delete $minusroles{$role};
+}
+
+# Leftover '-' roles
+for my $role (keys %minusroles) {
+    print "-$role\n";
+}
+
+# Leftover '+' roles
+for my $role (keys %plusroles) {
+    print "+$role\n";
+}

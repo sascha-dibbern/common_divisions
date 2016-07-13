@@ -1,0 +1,90 @@
+bundle common cfengine_stdlib
+{
+  vars:
+    cfengine_3_5::
+      # 3.5 doesn't have "body file control" so all the includes are listed here
+      "inputs" slist => {
+                          "lib/3.5/paths.cf",
+                          "lib/3.5/common.cf",
+                          "lib/3.5/commands.cf",
+                          "lib/3.5/packages.cf",
+                          "lib/3.5/files.cf",
+                          "lib/3.5/services.cf",
+                          "lib/3.5/processes.cf",
+                          "lib/3.5/storage.cf",
+                          "lib/3.5/databases.cf",
+                          "lib/3.5/monitor.cf",
+                          "lib/3.5/guest_environments.cf",
+                          "lib/3.5/bundles.cf",
+                          "lib/3.5/cfe_internal.cf",
+      };
+
+    !cfengine_3_5::
+      # CFEngine 3.6 and higher can include through a secondary file
+      "inputs" slist => { "../../$(sys.local_libdir)/stdlib.cf" };
+
+  reports:
+    any::
+     "common cfengine_stdlib $(sys.local_libdir)";
+    #verbose_mode::
+      "$(this.bundle): defining inputs='$(inputs)'";
+}
+
+bundle common divisions
+{
+  classes:
+    !common_divisions::
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=hostroles");
+}
+
+
+body common control
+{
+      inputs => {
+                 @(cfengine_stdlib.inputs),
+                 @(cfdivisions.cfdivisions_common_divisions_inputs)
+      };
+
+      bundlesequence => {
+                          @(cfdivisions.cfdivisions_common_divisions_bundlesequence),
+#			  test_setup,
+#                          common_divisions:hostroles_run,
+                          test_hostroles,
+                          common_divisions:hostroles_run
+      };
+}
+
+bundle agent test_setup
+{
+  methods:
+    "configuration" usebundle => common_divisions:library_configuration("$(cfdivisions.common_divisions_path[hostroles])/test.json");
+}
+
+bundle agent test_hostroles
+{
+  methods:
+    "update" 
+        usebundle => common_divisions:hostroles_configuration("common_divisions/hostroles/test-hostroles.txt","testhost");
+    "run" 
+        usebundle => common_divisions:hostroles_run;
+
+  reports:
+    any::
+     "Bundlesequence: $(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+
+    common_divisions:hostroles_configuration_location_defined::
+      "    ok - hostroles_configuration_location_defined";
+    !common_divisions:hostroles_configuration_location_defined::
+      "    not ok - hostroles_configuration_location_defined";
+
+    common_divisions:hostroles_module_exists::
+      "    ok - hostroles_module_exists";
+    !common_divisions:hostroles_module_exists::
+      "    not ok - hostroles_module_exists";
+
+    common_divisions:hostroles_module_executed::
+      "    ok - hostroles_module_executed";
+    !common_divisions:hostroles_module_executed::
+      "    not ok - hostroles_module_executed";
+}
+
