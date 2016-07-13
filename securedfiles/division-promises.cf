@@ -13,17 +13,18 @@ body file control
 bundle common securedfiles
 {
   classes:
-    "location_defined"
+   any::
+    "securedfiles_location_defined"
        not => strcmp("$(library_configuration.securedfiles_location)","");
 
   vars:
-    location_defined::
+    securedfiles_location_defined::
       "location"
         string  => "$(library_configuration.securedfiles_location)",
         comment => "The secured files cfengine directory on the policy host",
         handle  => "vars_securedfiles_location";
 
-    !location_defined::
+    !securedfiles_location_defined::
       "location"    
         string  => "$(sys.workdir)/securedfiles",
         comment => "The secured files cfengine directory on the policy host",
