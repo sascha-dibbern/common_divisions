@@ -8,19 +8,26 @@ body file control
     namespace => "common_divisions";
 }
 
+bundle common redhat_common {
+  classes:
+    redhat|fedora|rhel|centos::
+      "redhat_derivat" 
+        expression => "any";
+}
+
 bundle agent redhat_menu
 {
   methods:
-    redhat::
+    redhat_derivat::
       "packageing" usebundle =>rpm_package_arch; 
 }
 
 bundle agent rpm_package_arch
 {
   classes:
-    redhat.64_bit::
+    redhat_derivat.64_bit::
       "rpm_x86_64" expression => "any";
-    redhat.32_bit::
+    redhat_derivat.32_bit::
       "rpm_i386"   expression => "any";
 
   vars:
@@ -29,7 +36,7 @@ bundle agent rpm_package_arch
     rpm_i386::
       "current" string => "i386";
   reports:
-    cfengine::
+    cfengine.(rpm_x86_64|rpm_i386)::
       "RPM-architecture is $(current)";
 }
 
