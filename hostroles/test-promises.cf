@@ -34,7 +34,8 @@ bundle common divisions
 {
   classes:
     !common_divisions::
-      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=hostroles");
+      # !!! ignore bundles hostroles_defined_by_library_configuration and hostroles_run in bundlessequence
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=hostroles --ignore_bundles=hostroles_defined_by_library_configuration,hostroles_run");
 }
 
 
@@ -47,17 +48,8 @@ body common control
 
       bundlesequence => {
                           @(cfdivisions.cfdivisions_common_divisions_bundlesequence),
-#			  test_setup,
-#                          common_divisions:hostroles_run,
                           test_hostroles,
-                          common_divisions:hostroles_run
       };
-}
-
-bundle agent test_setup
-{
-  methods:
-    "configuration" usebundle => common_divisions:library_configuration("$(cfdivisions.common_divisions_path[hostroles])/test.json");
 }
 
 bundle agent test_hostroles
@@ -86,5 +78,14 @@ bundle agent test_hostroles
       "    ok - hostroles_module_executed";
     !common_divisions:hostroles_module_executed::
       "    not ok - hostroles_module_executed";
+
+    common_divisions:test1::
+      "    ok - class test1 defined";
+    !common_divisions:test1::
+      "    not ok - class test1 defined";
+    !common_divisions:test2::
+      "    ok - class test2 undefined";
+    common_divisions:test2::
+      "    not ok - class test2 undefined";
 }
 
