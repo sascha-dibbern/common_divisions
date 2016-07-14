@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = hostroles_module_update,hostroles_defined_by_library_configuration
+# *cfdivisions_bundlesequence = hostroles_module_update,hostroles_defined_by_library_configuration,hostroles_run
 # *cfdivisions_depends = library_configuration,cfengine
 #
 # exported bundle
@@ -118,14 +118,5 @@ bundle agent hostroles_run
       "hostroles_module_executed";
     !(DEBUG|DEBUG_hostroles).hostroles_module_executed::
       "no hostroles_module_executed";
-
-    test1::
-      "test1";
-    !test1::
-      "!test1";
-    test2::
-      "test2";
-    !test2::
-      "!test2";
 }
 
