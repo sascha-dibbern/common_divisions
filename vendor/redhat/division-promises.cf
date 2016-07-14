@@ -1,0 +1,35 @@
+#
+# *cfdivisions_bundlesequence = redhat_menu
+# *cfdivisions_depends = 
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle agent redhat_menu
+{
+  methods:
+    redhat::
+      "packageing" usebundle =>rpm_package_arch; 
+}
+
+bundle agent rpm_package_arch
+{
+  classes:
+    redhat.64_bit::
+      "rpm_x86_64" expression => "any";
+    redhat.32_bit::
+      "rpm_i386"   expression => "any";
+
+  vars:
+    rpm_x86_64::
+      "current" string => "x86_64";
+    rpm_i386::
+      "current" string => "i386";
+  reports:
+    cfengine::
+      "RPM-architecture is $(current)";
+}
+
