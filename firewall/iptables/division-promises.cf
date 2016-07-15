@@ -1,0 +1,197 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends = 
+#
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+body contain firewall_iptables_shell_command
+{
+    useshell  => "yes";
+    no_output => "yes";
+}
+
+bundle common firewall_iptables
+{
+  classes:
+    linux::
+      "firewall_iptables_exist"
+        expression => fileexists($(path));
+
+  vars:
+    linux::
+      "path"
+        string => "/sbin/iptables";
+}
+
+bundle agent firewall_iptables_open_INPUT_allsources(protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp(".+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"$(protocol)\") and ($F[4] eq \"0.0.0.0/0\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    !rule_exists.firewall_iptables_exist::
+      "$(firewall_iptables.path) -I INPUT 1 -m state --state NEW -m $(protocol) -p $(protocol) --dport $(portnum) -j ACCEPT"
+        contain => firewall_iptables_shell_command;
+#      "/sbin/service iptables save; echo 'Save firewall change $(protocol):$(portnum)'"
+#        contain => firewall_iptables_shell_command;
+
+    rule_exists.firewall_iptables_exist::
+      "/bin/echo '+$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
+
+
+bundle agent firewall_iptables_close_INPUT_allsources(protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp("\d+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"$(protocol)\") and  ($F[4] eq \"0.0.0.0/0\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    rule_exists.firewall_iptables_exist::
+      "$(firewall_iptables.path) -D INPUT $(rulenum)"
+        contain => firewall_iptables_shell_command;
+#      "/sbin/service iptables save; echo 'Save firewall change $(protocol):$(portnum)'"
+#        contain => firewall_iptables_shell_command;
+
+    !rule_exists.firewall_iptables_exist::
+      "/bin/echo '-$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
+
+bundle agent firewall_iptables_query_INPUT_allsources(protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp("\d+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"tcp\") and  ($F[4] eq \"0.0.0.0/0\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    rule_exists.firewall_iptables_exist::
+      "/bin/echo '+$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+    !rule_exists.firewall_iptables_exist::
+      "/bin/echo '-$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
+
+#
+# Traffic from certain sources
+#
+bundle agent firewall_iptables_open_INPUT_sourcebased(source,protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp(".+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"tcp\") and ($F[4] eq \"$(source)\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    !rule_exists.firewall_iptables_exist::
+      "$(firewall_iptables.path) -I INPUT 1 -m state --state NEW -m $(protocol) -s $(source) -p $(protocol) --dport $(portnum) -j ACCEPT"
+        contain => firewall_iptables_shell_command;
+#      "/sbin/service iptables save; echo 'Save firewall change $(protocol):$(portnum)'"
+#        contain => firewall_iptables_shell_command;
+
+    rule_exists.firewall_iptables_exist::
+      "/bin/echo '+$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
+
+
+bundle agent firewall_iptables_close_INPUT_sourcebased(source,protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp("\d+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"tcp\") and  ($F[4] eq \"$(source)\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    rule_exists.firewall_iptables_exist::
+      "$(firewall_iptables.path) -D INPUT $(rulenum)"
+        contain => firewall_iptables_shell_command;
+#      "/sbin/service iptables save; echo 'Save firewall change $(protocol):$(portnum)'"
+#        contain => firewall_iptables_shell_command;
+
+    !rule_exists.firewall_iptables_exist::
+      "/bin/echo '-$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
+
+bundle agent firewall_iptables_query_INPUT_sourcebased(protocol,portnum,classname)
+{
+  classes:
+    "rule_exists" 
+      expression => regcmp("\d+","$(rulenum)");
+
+  vars:
+    firewall_iptables_exist::
+      "rulenum" 
+        string => execresult(
+          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"tcp\") and  ($F[4] eq \"$(source)\") and ($F[9] eq \"dpt:$(portnum)\")'",
+          "useshell"
+        ),
+        policy => "overridable";
+
+  commands:
+    rule_exists.firewall_iptables_exist::
+      "/bin/echo '+$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+    !rule_exists.firewall_iptables_exist::
+      "/bin/echo '-$(classname)' || /bin/echo ''"
+        contain => firewall_iptables_shell_command,
+        module  => "true";
+}
