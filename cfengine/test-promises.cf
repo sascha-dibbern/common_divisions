@@ -62,18 +62,18 @@ bundle agent cleanup_testdata
       "$(common_divisions:cfengine_spec.bin_path)/mockbin.pl"
         delete => tidy;
   reports:
-    "Delete test data $(common_divisions:cfengine_spec.modules_path)/mockmodule $(common_divisions:cfengine_spec.bin_path)/mockbin.pl";
+      "Delete test data $(common_divisions:cfengine_spec.modules_path)/mockmodule $(common_divisions:cfengine_spec.bin_path)/mockbin.pl";
 }
 
 bundle agent test_module_update
 {
   methods:
-    "update" 
+      "update" 
         usebundle => common_divisions:cfengine_division_module_update("common_divisions","cfengine","mockmodule");
 
   reports:
     any::
-     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+      "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
     common_divisions:mockmodule_module_updated::
       "    ok - Module updated";
     !common_divisions:mockmodule_module_updated::
@@ -83,12 +83,12 @@ bundle agent test_module_update
 bundle agent test_binary_update
 {
   methods:
-    "update" 
+      "update" 
         usebundle => common_divisions:cfengine_division_binary_update("common_divisions","cfengine","mockbin.pl");
 
   reports:
     any::
-     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+      "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
     common_divisions:mockbin_pl_binary_updated::
       "    ok - Binary updated";
     !common_divisions:mockbin_pl_binary_updated::
