@@ -1,0 +1,191 @@
+#!/usr/bin/perl
+
+use Carp;
+use Getopt::Long;
+use v5.14;
+use Data::Dumper;
+
+my $action;
+my $dryrun;
+my $verbose;
+my $ip6;
+my $protocol;
+my $sourceportnumber;
+my $source;
+my $portnumber;
+my $destination;
+my $states;
+my $cfclass;
+
+GetOptions (
+    "action=s"      => \$action,
+    "dryrun"        => \$dryrun,    
+    "verbose"       => \$verbose,    
+    "ip6"           => \$ip6,    
+    "protocol:s"    => \$protocol,
+    "sourceportnumber:s"  => \$sourceportnumber,    
+    "source:s"      => \$source,
+    "portnumber:s"  => \$portnumber,    
+    "destination:s" => \$destination,
+    "states:s"      => \$states,
+    "cfclass:s"     => \$cfclass,
+);
+
+my $iptables_bin =`which iptables`;
+$source          = "0.0.0.0/0" unless $source;
+
+if ($ip6) {
+    $iptables_bin =`which ip6tables`;
+    # TODO: any-address ofr IP6
+    $source       = "0.0.0.0/0" unless $source;
+}
+
+chomp $iptables_bin;
+$states="NEW" unless defined $states;
+
+sub parse_INPUT_rule_extras {
+    my @extras = @_;
+    my %result;
+    while (my $current = shift @extras) {
+	if (($current eq 'udp') or ($current eq 'tcp')) {
+	    my $current         = shift @extras;
+	    my ($s,$port)       = split /:/,$current;
+	    $result{portnumber} = $port;
+	    next;
+	}
+	if ($current eq 'state') {
+	    my $current    = shift @extras;
+	    my @states     = split /,/,$current;
+	    $result{states} = \@states;
+	    next;
+	}
+    }
+    return %result;
+}
+
+sub first_matching_INPUT_ACCEPT_rule_number {
+    my $cmd    = "$iptables_bin -L INPUT --line-numbers -n";
+    say "Running: $cmd" if $verbose;
+
+    my $output = "";
+    $output = `$cmd` unless $dryrun;
+
+    say  "Output:\n$output" if $verbose;
+
+    my @lines = split /\n/,$output;
+    for my $line (@lines) {
+	my ($rulenum,$ruletarget,$ruleprotocol,$ruleoption,$rulesrc,$ruledest,@ruleextras)= split /\s+/,$line;
+
+	# Nummeric rule-id
+	next unless $rulenum =~ /\d+/;
+
+	# Must be an accept rule
+	next unless $ruletarget eq 'ACCEPT';
+
+	if (defined $protocol) {
+	    next unless ($ruleprotocol =~/$protocol/);
+	}
+	say "Matching protocoll for rule number: ".$rulenum if $verbose;
+
+	if (defined $source) {
+	    next unless $rulesrc =~ /$source/;
+	}
+	say "Matching source for rule number: ".$rulenum if $verbose;
+
+	if (defined $destination) {
+	    next unless $ruledest =~ /$destination/;
+	}
+	say "Matching destination for rule number: ".$rulenum if $verbose;
+
+	my %extras = parse_INPUT_rule_extras(@ruleextras);
+	
+	if (defined $portnumber) {
+	    my $ruleportnumber = $extras{portnumber} // "";
+	    next unless $ruleportnumber =~ /$portnumber/;
+	}
+	say "Matching destination portnumber for rule number: ".$rulenum if $verbose;
+	if (defined $states) {
+	    my $rulestates  = $extras{states} // [];
+	    my $state_match = 0;
+	    for my $rulestate (@$rulestates) {
+		next unless $rulestate =~ /$states/;
+		$state_match ++;
+	    }
+	    
+	    # All states have to match
+	    next if $state_match<length(@$rulestates);
+	}	
+	say "Matching states for rule number: ".$rulenum if $verbose;
+
+	say "Found rule number: ".$rulenum if $verbose;
+
+	return $rulenum;
+    }
+
+    return undef;
+}
+
+sub do_exist_inputaccept {
+    if (first_matching_INPUT_ACCEPT_rule_number()) {
+	say "+$cfclass";
+    }
+}
+
+sub do_allow_inputaccept {
+    return if first_matching_INPUT_ACCEPT_rule_number();
+
+    croak "No protocol defined" unless defined $protocol;
+
+    my $cmd = "$iptables_bin -I INPUT 1";
+
+    # Connection state
+    $cmd.=" -m state --state $states";
+
+    # Protocol module
+    $cmd.=" -m $protocol -p $protocol";
+
+    # Source
+    $cmd.=" -sport $sourceportnumber" if defined $sourceportnumber;
+    $cmd.=" -s $source" if defined $source;
+
+    # Destination
+    $cmd.=" --dport $portnumber";
+    $cmd.=" -d $destination" if defined $destination;
+
+    $cmd.=" -j ACCEPT";
+
+    if ($dryrun) {
+	say "Dryrun: ".$cmd if $verbose;
+    } else {
+	my $output = `$cmd`;
+	say '*'.$output if $verbose;
+    }
+
+    do_exist_inputaccept()
+}
+
+sub do_none_inputaccept {
+    unless (first_matching_INPUT_ACCEPT_rule_number()) {
+	say "+$cfclass";
+    }
+}
+
+sub do_remove_inputaccept {
+    my $rulenum = first_matching_INPUT_ACCEPT_rule_number();
+    return unless defined $rulenum;
+
+    my $cmd = "$iptables_bin -D INPUT $rulenum";
+    
+    if ($dryrun) {
+	say "Dryrun: ".$cmd if $verbose;
+    } else {
+	my $output = `$cmd`;
+	say $output if $verbose;
+    }
+
+    do_none_inputaccept();
+}
+
+no strict qw/refs/;
+my $do_action="do_$action";
+&$do_action;

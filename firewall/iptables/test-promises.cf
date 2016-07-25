@@ -1,0 +1,167 @@
+bundle common cfengine_stdlib
+{
+  vars:
+    cfengine_3_5::
+      # 3.5 doesn't have "body file control" so all the includes are listed here
+      "inputs" slist => {
+                          "lib/3.5/paths.cf",
+                          "lib/3.5/common.cf",
+                          "lib/3.5/commands.cf",
+                          "lib/3.5/packages.cf",
+                          "lib/3.5/files.cf",
+                          "lib/3.5/services.cf",
+                          "lib/3.5/processes.cf",
+                          "lib/3.5/storage.cf",
+                          "lib/3.5/databases.cf",
+                          "lib/3.5/monitor.cf",
+                          "lib/3.5/guest_environments.cf",
+                          "lib/3.5/bundles.cf",
+                          "lib/3.5/cfe_internal.cf",
+      };
+
+    !cfengine_3_5::
+      # CFEngine 3.6 and higher can include through a secondary file
+      "inputs" slist => { "../../../$(sys.local_libdir)/stdlib.cf" };
+
+  reports:
+    any::
+     "common cfengine_stdlib $(sys.local_libdir)";
+    #verbose_mode::
+      "$(this.bundle): defining inputs='$(inputs)'";
+}
+
+bundle common divisions
+{
+  classes:
+    !common_divisions::
+      "common_divisions" expression => usemodule ("cfdivisions","--library=common_divisions --namespace=common_divisions --inputs_path=$(sys.workdir)/inputs --divisionfilter=firewall_iptables --ignore_bundles=firewall_iptables_module_setup");
+}
+
+
+body common control
+{
+      inputs => {
+                 @(cfengine_stdlib.inputs),
+                 @(cfdivisions.cfdivisions_common_divisions_inputs)
+      };
+
+      bundlesequence => {
+                          @(cfdivisions.cfdivisions_common_divisions_bundlesequence),
+                         cleanup_testdata,
+                         test_module_update,
+                         test_firewall_iptables_open_INPUT_allsources,
+                         test_firewall_iptables_close_INPUT_allsources,
+                         test_firewall_iptables_query_INPUT_allsources,
+                         test_firewall_iptables_open_INPUT_sourcebased,
+                         test_firewall_iptables_close_INPUT_sourcebased,
+                         test_firewall_iptables_query_INPUT_sourcebased,
+      };
+}
+
+bundle agent cleanup_testdata
+{
+  files:
+      "$(common_divisions:cfengine_spec.modules_path)/firewall-iptables-mock1"
+        delete => tidy;
+
+  reports:
+    "Delete tested module $(common_divisions:cfengine_spec.modules_path)/firewall-iptables-mock1";
+}
+
+bundle agent test_module_update
+{
+  methods:
+    "update" 
+        usebundle => common_divisions:firewall_iptables($(common_divisions:firewall_iptables_default.path),"firewall-iptables-mock1");
+    "update" 
+        usebundle => common_divisions:firewall_iptables_module_setup();
+
+  reports:
+    any::
+     "$(cfdivisions.cfdivisions_common_divisions_bundlesequence)";
+    common_divisions:firewall_iptables_mock1_module_updated::
+      "    ok - Module updated";
+    !common_divisions:firewall_iptables_mock1_module_updated::
+      "    not ok - Module updated";
+}
+
+bundle agent test_firewall_iptables_open_INPUT_allsources
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_open_INPUT_allsources("tcp","60000","testport_opened");
+
+  reports:
+    common_divisions:testport_opened::
+      "    ok - firewall_iptables_open_INPUT_allsources";
+    !common_divisions:testport_opened::
+      "    not ok - firewall_iptables_open_INPUT_allsources";
+}
+
+bundle agent test_firewall_iptables_close_INPUT_allsources
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_close_INPUT_allsources("tcp","60000","testport_closed");
+
+  reports:
+    common_divisions:testport_closed::
+      "    ok - firewall_iptables_close_INPUT_allsources";
+    !common_divisions:testport_closed::
+      "    not ok - firewall_iptables_close_INPUT_allsources";
+}
+
+bundle agent test_firewall_iptables_query_INPUT_allsources
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_query_INPUT_allsources("tcp","60000","testport_query");
+
+  reports:
+    common_divisions:testport_query::
+      "    ok - firewall_iptables_query_INPUT_allsources";
+    !common_divisions:testport_query::
+      "    not ok - firewall_iptables_query_INPUT_allsources";
+}
+
+##
+
+bundle agent test_firewall_iptables_open_INPUT_sourcebased
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_open_INPUT_sourcebased("127.0.0.1","tcp","60000","testport_opened");
+
+  reports:
+    common_divisions:testport_opened::
+      "    ok - firewall_iptables_open_INPUT_sourcebased";
+    !common_divisions:testport_opened::
+      "    not ok - firewall_iptables_open_INPUT_sourcebased";
+}
+
+bundle agent test_firewall_iptables_close_INPUT_sourcebased
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_close_INPUT_sourcebased("127.0.0.1","tcp","60000","testport_closed");
+
+  reports:
+    common_divisions:testport_closed::
+      "    ok - firewall_iptables_close_INPUT_sourcebased";
+    !common_divisions:testport_closed::
+      "    not ok - firewall_iptables_close_INPUT_sourcebased";
+}
+
+bundle agent test_firewall_iptables_query_INPUT_sourcebased
+{
+  methods:
+    "open" 
+        usebundle => common_divisions:firewall_iptables_query_INPUT_sourcebased("127.0.0.1","tcp","60000","testport_query");
+
+  reports:
+    common_divisions:testport_query::
+      "    ok - firewall_iptables_query_INPUT_sourcebased";
+    !common_divisions:testport_query::
+      "    not ok - firewall_iptables_query_INPUT_sourcebased";
+}
+

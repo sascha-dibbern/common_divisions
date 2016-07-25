@@ -1,6 +1,6 @@
 #
-# *cfdivisions_bundlesequence = 
-# *cfdivisions_depends = 
+# *cfdivisions_bundlesequence = firewall_iptables_default 
+# *cfdivisions_depends = cfengine
 #
 
 body file control
@@ -14,7 +14,8 @@ body contain firewall_iptables_shell_command
     no_output => "yes";
 }
 
-bundle common firewall_iptables
+
+bundle common firewall_iptables(path_arg,module_arg)
 {
   classes:
     linux::
@@ -24,39 +25,93 @@ bundle common firewall_iptables
   vars:
     linux::
       "path"
+        string => $(path_arg);
+
+      "module"
+        string => $(module_arg);
+}
+
+bundle agent firewall_iptables_default
+{
+  classes:
+    linux::
+      "default_firewall_iptables_exist"
+        expression => fileexists($(path));
+
+  vars:
+    linux::
+      "path"
         string => "/sbin/iptables";
+
+      "module"
+        string => "firewall-iptables";
+
+  methods:
+    default_firewall_iptables_exist::
+      "defaulting_values" 
+        usebundle => firewall_iptables($(path),$(module));
+}
+
+bundle agent firewall_iptables_module_setup 
+{
+  methods:
+    firewall_iptables_exist::
+      "$(firewall_iptables.module)" 
+        usebundle => common_divisions:cfengine_division_module_update("common_divisions","firewall_iptables","$(firewall_iptables.module)");
 }
 
 bundle agent firewall_iptables_open_INPUT_allsources(protocol,portnum,classname)
 {
   classes:
-    "rule_exists" 
-      expression => regcmp(".+","$(rulenum)");
-
-  vars:
     firewall_iptables_exist::
-      "rulenum" 
-        string => execresult(
-          "$(firewall_iptables.path) -L --line-numbers -n | /usr/bin/perl -F'/\s+/' -ane 'print $F[0] if ($F[2] eq \"$(protocol)\") and ($F[4] eq \"0.0.0.0/0\") and ($F[9] eq \"dpt:$(portnum)\")'",
-          "useshell"
-        ),
-        policy => "overridable";
-
-  commands:
-    !rule_exists.firewall_iptables_exist::
-      "$(firewall_iptables.path) -I INPUT 1 -m state --state NEW -m $(protocol) -p $(protocol) --dport $(portnum) -j ACCEPT"
-        contain => firewall_iptables_shell_command;
-#      "/sbin/service iptables save; echo 'Save firewall change $(protocol):$(portnum)'"
-#        contain => firewall_iptables_shell_command;
-
-    rule_exists.firewall_iptables_exist::
-      "/bin/echo '+$(classname)' || /bin/echo ''"
-        contain => firewall_iptables_shell_command,
-        module  => "true";
+      "firewall_iptables_open_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=allow_inputaccept --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
 }
 
 
 bundle agent firewall_iptables_close_INPUT_allsources(protocol,portnum,classname)
+{
+  classes:
+    firewall_iptables_exist::
+      "firewall_iptables_close_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=remove_inputaccept --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
+}
+
+bundle agent firewall_iptables_query_INPUT_allsources(protocol,portnum,classname)
+{
+  classes:
+    firewall_iptables_exist::
+      "firewall_iptables_query_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=exist_inputaccept --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
+}
+
+bundle agent firewall_iptables_open_INPUT_sourcebased(source,protocol,portnum,classname)
+{
+  classes:
+    firewall_iptables_exist::
+      "firewall_iptables_open_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=allow_inputaccept --source=$(source) --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
+}
+
+bundle agent firewall_iptables_close_INPUT_sourcebased(source,protocol,portnum,classname)
+{
+  classes:
+    firewall_iptables_exist::
+      "firewall_iptables_close_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=remove_inputaccept --source=$(source) --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
+}
+
+bundle agent firewall_iptables_query_INPUT_sourcebased(source,protocol,portnum,classname)
+{
+  classes:
+    firewall_iptables_exist::
+      "firewall_iptables_query_INPUT_allsources_$(protocol)_$(portnum)"
+        expression => usemodule ("$(firewall_iptables.module)","--action=exist_inputaccept --source=$(source) --protocol=$(protocol) --portnumber=$(portnum) --states=NEW --cfclass=$(classname)");
+}
+
+#====================================================
+
+bundle agent old_firewall_iptables_close_INPUT_allsources(protocol,portnum,classname)
 {
   classes:
     "rule_exists" 
@@ -84,7 +139,7 @@ bundle agent firewall_iptables_close_INPUT_allsources(protocol,portnum,classname
         module  => "true";
 }
 
-bundle agent firewall_iptables_query_INPUT_allsources(protocol,portnum,classname)
+bundle agent old_firewall_iptables_query_INPUT_allsources(protocol,portnum,classname)
 {
   classes:
     "rule_exists" 
@@ -113,7 +168,7 @@ bundle agent firewall_iptables_query_INPUT_allsources(protocol,portnum,classname
 #
 # Traffic from certain sources
 #
-bundle agent firewall_iptables_open_INPUT_sourcebased(source,protocol,portnum,classname)
+bundle agent old_firewall_iptables_open_INPUT_sourcebased(source,protocol,portnum,classname)
 {
   classes:
     "rule_exists" 
@@ -142,7 +197,7 @@ bundle agent firewall_iptables_open_INPUT_sourcebased(source,protocol,portnum,cl
 }
 
 
-bundle agent firewall_iptables_close_INPUT_sourcebased(source,protocol,portnum,classname)
+bundle agent old_firewall_iptables_close_INPUT_sourcebased(source,protocol,portnum,classname)
 {
   classes:
     "rule_exists" 
@@ -170,7 +225,7 @@ bundle agent firewall_iptables_close_INPUT_sourcebased(source,protocol,portnum,c
         module  => "true";
 }
 
-bundle agent firewall_iptables_query_INPUT_sourcebased(protocol,portnum,classname)
+bundle agent old_firewall_iptables_query_INPUT_sourcebased(protocol,portnum,classname)
 {
   classes:
     "rule_exists" 

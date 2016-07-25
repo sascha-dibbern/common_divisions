@@ -1,0 +1,66 @@
+#!/usr/bin/perl
+
+use Carp;
+use Getopt::Long;
+use v5.14;
+use Data::Dumper;
+
+my $action;
+my $dryrun;
+my $verbose;
+my $ip6;
+my $protocol;
+my $sourceportnumber;
+my $source;
+my $portnumber;
+my $destination;
+my $states;
+my $cfclass;
+
+GetOptions (
+    "action=s"      => \$action,
+    "dryrun"        => \$dryrun,    
+    "verbose"       => \$verbose,    
+    "ip6"           => \$ip6,    
+    "protocol:s"    => \$protocol,
+    "sourceportnumber:s"  => \$sourceportnumber,    
+    "source:s"      => \$source,
+    "portnumber:s"  => \$portnumber,    
+    "destination:s" => \$destination,
+    "states:s"      => \$states,
+    "cfclass:s"     => \$cfclass,
+);
+
+my $iptables_bin =`which iptables`;
+$source          = "0.0.0.0/0" unless $source;
+
+if ($ip6) {
+    $iptables_bin =`which ip6tables`;
+    # TODO: any-address ofr IP6
+    $source       = "0.0.0.0/0" unless $source;
+}
+
+chomp $iptables_bin;
+$states="NEW" unless defined $states;
+
+sub do_exist_inputaccept {
+    say "+$cfclass";
+}
+
+sub do_allow_inputaccept {
+    croak "No protocol defined" unless defined $protocol;
+
+    do_exist_inputaccept()
+}
+
+sub do_none_inputaccept {
+    say "+$cfclass";
+}
+
+sub do_remove_inputaccept {
+    do_none_inputaccept();
+}
+
+no strict qw/refs/;
+my $do_action="do_$action";
+&$do_action;
