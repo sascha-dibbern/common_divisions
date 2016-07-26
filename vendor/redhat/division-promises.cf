@@ -11,23 +11,131 @@ body file control
 bundle common redhat_common {
   classes:
     redhat|fedora|rhel|centos::
-      "redhat_derivat" 
+      "redhat_derivate" 
+        expression => "any";
+    rhel|centos::
+      "rhel_derivate" 
+        expression => "any";
+
+    rhel_derivate.(centos_5|rhel_5)::
+      "rhel_derivate_5" 
+        expression => "any";
+    rhel_derivate.(centos_5_0|rhel_5_0)::
+      "rhel_derivate_5_0" 
+        expression => "any";
+    rhel_derivate.(centos_5_1|rhel_5_1)::
+      "rhel_derivate_5_1" 
+        expression => "any";
+    rhel_derivate.(centos_5_2|rhel_5_2)::
+      "rhel_derivate_5_2" 
+        expression => "any";
+    rhel_derivate.(centos_5_3|rhel_5_3)::
+      "rhel_derivate_5_3" 
+        expression => "any";
+    rhel_derivate.(centos_5_4|rhel_5_4)::
+      "rhel_derivate_5_4" 
+        expression => "any";
+    rhel_derivate.(centos_5_5|rhel_5_5)::
+      "rhel_derivate_5_5" 
+        expression => "any";
+    rhel_derivate.(centos_5_6|rhel_5_6)::
+      "rhel_derivate_5_6" 
+        expression => "any";
+    rhel_derivate.(centos_5_7|rhel_5_7)::
+      "rhel_derivate_5_7" 
+        expression => "any";
+    rhel_derivate.(centos_5_8|rhel_5_8)::
+      "rhel_derivate_5_8" 
+        expression => "any";
+    rhel_derivate.(centos_5_9|rhel_5_9)::
+      "rhel_derivate_5_9" 
+        expression => "any";
+    rhel_derivate.(centos_5_10|rhel_5_10)::
+      "rhel_derivate_5_10" 
+        expression => "any";
+
+    rhel_derivat.(centos_6|rhel_6)::
+      "rhel_derivate_6" 
+        expression => "any";
+    rhel_derivate.(centos_6_1|rhel_6_1)::
+      "rhel_derivate_6_1" 
+        expression => "any";
+    rhel_derivate.(centos_6_2|rhel_6_2)::
+      "rhel_derivate_6_2" 
+        expression => "any";
+    rhel_derivate.(centos_6_3|rhel_6_3)::
+      "rhel_derivate_6_3" 
+        expression => "any";
+    rhel_derivate.(centos_6_4|rhel_6_4)::
+      "rhel_derivate_6_4" 
+        expression => "any";
+    rhel_derivate.(centos_6_5|rhel_6_5)::
+      "rhel_derivate_6_5" 
+        expression => "any";
+    rhel_derivate.(centos_6_6|rhel_6_6)::
+      "rhel_derivate_6_6" 
+        expression => "any";
+    rhel_derivate.(centos_6_7|rhel_6_7)::
+      "rhel_derivate_6_7" 
+        expression => "any";
+    rhel_derivate.(centos_6_8|rhel_6_8)::
+      "rhel_derivate_6_8" 
+        expression => "any";
+    rhel_derivate.(centos_6_9|rhel_6_9)::
+      "rhel_derivate_6_9" 
+        expression => "any";
+    rhel_derivate.(centos_6_10|rhel_6_10)::
+      "rhel_derivate_6_10" 
+        expression => "any";
+
+    rhel_derivate.(centos_7|rhel_7)::
+      "rhel_derivate_7" 
+        expression => "any";
+    rhel_derivate.(centos_7_1|rhel_7_1)::
+      "rhel_derivate_7_1" 
+        expression => "any";
+    rhel_derivate.(centos_7_2|rhel_7_2)::
+      "rhel_derivate_7_2" 
+        expression => "any";
+    rhel_derivate.(centos_7_3|rhel_7_3)::
+      "rhel_derivate_7_3" 
+        expression => "any";
+    rhel_derivate.(centos_7_4|rhel_7_4)::
+      "rhel_derivate_7_4" 
+        expression => "any";
+    rhel_derivate.(centos_7_5|rhel_7_5)::
+      "rhel_derivate_7_5" 
+        expression => "any";
+    rhel_derivate.(centos_7_6|rhel_7_6)::
+      "rhel_derivate_7_6" 
+        expression => "any";
+    rhel_derivate.(centos_7_7|rhel_7_7)::
+      "rhel_derivate_7_7" 
+        expression => "any";
+    rhel_derivate.(centos_7_8|rhel_7_8)::
+      "rhel_derivate_7_8" 
+        expression => "any";
+    rhel_derivate.(centos_7_9|rhel_7_9)::
+      "rhel_derivate_7_9" 
+        expression => "any";
+    rhel_derivate.(centos_7_10|rhel_7_10)::
+      "rhel_derivate_7_10" 
         expression => "any";
 }
 
 bundle agent redhat_menu
 {
   methods:
-    redhat_derivat::
+    redhat_derivate::
       "packageing" usebundle =>rpm_package_arch; 
 }
 
 bundle agent rpm_package_arch
 {
   classes:
-    redhat_derivat.64_bit::
+    redhat_derivate.64_bit::
       "rpm_x86_64" expression => "any";
-    redhat_derivat.32_bit::
+    redhat_derivate.32_bit::
       "rpm_i386"   expression => "any";
 
   vars:
