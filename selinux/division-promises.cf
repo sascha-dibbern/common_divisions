@@ -13,7 +13,7 @@ bundle agent selinux_init
   classes:
     rhel|centos|fedora::
       "selinux_available"
-         expression => any;
+         expression => "any";
 
   vars:
     selinux_available::
