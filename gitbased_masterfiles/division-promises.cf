@@ -23,14 +23,14 @@ bundle agent gitbased_masterfiles
        not => strcmp("$(library_configuration.gitbased_masterfiles_git_source)","");
     
   vars:
-    gitbased_masterfiles_git_branch_library_defined:
+    gitbased_masterfiles_git_branch_library_defined::
       "git_branch" string => "$(library_configuration.gitbased_masterfiles_git_branch)";
-    !gitbased_masterfiles_git_branch_library_defined:
+    !gitbased_masterfiles_git_branch_library_defined::
       "git_branch" string => "master";
 
-    gitbased_masterfiles_git_source_library_defined:
+    gitbased_masterfiles_git_source_library_defined::
       "git_source" string => "$(library_configuration.gitbased_masterfiles_git_source)";
-    !gitbased_masterfiles_git_source_library_defined:
+    !gitbased_masterfiles_git_source_library_defined::
       "git_source" string => "origin";
 
   commands:
