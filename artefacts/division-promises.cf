@@ -47,7 +47,7 @@ bundle agent artefacts_update(source,destination,mode,user,group,class)
      copy_from    => artefacts_rcp("$(artefacts.location)/$(source)","$(artefacts.hub)"),
      depth_search => artefacts_recurse("inf"),
      file_select  => artefacts_input_files,
-     perms        => mog("$(mode)","$(user)","$(group)"),
+     perms        => default:mog("$(mode)","$(user)","$(group)"),
      action       => artefacts_immediate,
      classes      => artefacts_promise_state("$(class)");
 }
@@ -61,7 +61,7 @@ bundle agent artefacts_update_file(source,destination,mode,user,group,class)
      handle       => "artefacts_update_files",
      copy_from    => artefacts_rcp("$(artefacts.location)/$(source)","$(artefacts.hub)"),
      file_select  => artefacts_input_files,
-     perms        => mog("$(mode)","$(user)","$(group)"),
+     perms        => default:mog("$(mode)","$(user)","$(group)"),
      action       => artefacts_immediate,
      classes      => artefacts_promise_state("$(class)");
 }
@@ -72,7 +72,7 @@ bundle agent artefacts_hub
     am_policy_hub::
       "$(artefacts.location)/"
         create       => "true",
-        perms        => mog("755","$(cfengine_id.user)","$(cfengine_id.group)"),
+        perms        => default:mog("755","$(cfengine_id.user)","$(cfengine_id.group)"),
         depth_search => artefacts_recurse("inf");
 }
 
