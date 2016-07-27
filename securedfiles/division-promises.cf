@@ -46,7 +46,7 @@ bundle agent securedfiles_update(source,destination,mode,user,group,class)
       copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
       depth_search => securedfiles_recurse("inf"),
       file_select  => securedfiles_input_files,
-      perms        => mog("$(mode)","$(user)","$(group)"),
+      perms        => default:mog("$(mode)","$(user)","$(group)"),
       action       => securedfiles_immediate,
       classes      => securedfiles_promise_state("$(class)");
 }
@@ -59,7 +59,7 @@ bundle agent securedfiles_update_file(source,destination,mode,user,group,class)
       handle       => "securedfiles_update_files",
       copy_from    => securedfiles_rcp("$(securedfiles.location)/$(source)","$(securedfiles.hub)"),
       file_select  => securedfiles_input_files,
-      perms        => mog("$(mode)","$(user)","$(group)"),
+      perms        => default:mog("$(mode)","$(user)","$(group)"),
       action       => securedfiles_immediate,
       classes      => securedfiles_promise_state("$(class)");
 }
@@ -71,7 +71,7 @@ bundle agent securedfiles_hub
     am_policy_hub::
       "$(securedfiles.location)/"
         create       => "true",
-        perms        => mog("600","$(cfengine_id.user)","$(cfengine_id.group)"),
+        perms        => default:mog("600","$(cfengine_id.user)","$(cfengine_id.group)"),
         depth_search => securedfiles_recurse("inf");
 }
 
