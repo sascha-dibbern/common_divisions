@@ -117,32 +117,3 @@ body package_method cpanminus
     package_delete_convention    => "$(name)";
 }
 
-#
-# Tests
-#
-
-bundle agent perlmoduletest_add
-{
-  packages:
-      "Image::PNG"
-         package_policy  => "add",
-         package_method  => cpanminus,
-         package_version => "0.19";
-}
-
-bundle agent perlmoduletest_addupdate
-{
-  packages:
-      "Image::PNG"
-         package_policy  => "addupdate",
-         package_method  => cpanminus,
-         package_version => "0.20";
-}
-
-bundle agent perlmoduletest_delete
-{
-  packages:
-      "Image::PNG"
-         package_policy  => "delete",
-         package_method  => cpanminus;
-}
