@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = cpanminus_tools_setup,cpanminus_setup,perlmoduletest_delete
+# *cfdivisions_bundlesequence = cpanminus_tools_setup,cpanminus_setup
 # *cfdivisions_depends = specific_users,tools,tools_extwhich
 #
 
