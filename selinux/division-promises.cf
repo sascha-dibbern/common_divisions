@@ -27,7 +27,7 @@ bundle agent selinux_init
       "$(modules_dir)/sebooleans"
         perms     => default:mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
         copy_from => compare_backup_local_cp("$(cfdivisions.division_path[selinux])/sebooleans.txt"),
-        classes   => if_repaired("sebooleans_module_updated"),
+        classes   => default:if_repaired("sebooleans_module_updated"),
         comment   => "Update sebooleans module";
 }
 
