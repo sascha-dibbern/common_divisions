@@ -74,7 +74,7 @@ bundle agent cpanminus_tools_setup
       "$(perlmodules.script)"
         perms     => default:mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
         copy_from => compare_backup_local_cp("$(cfdivisions.division_path[cpanminus])/perlmodules.pl.txt"),
-        classes   => if_repaired("perlmodules_script_updated"),
+        classes   => default:if_repaired("perlmodules_script_updated"),
         comment   => "Update perlmodules.pl script";
 
   reports:
