@@ -11,17 +11,15 @@ body file control
 bundle agent main_library_configuration
 {
   methods:
-    "configuration" usebundle => library_configuration("");
+    "configuration" usebundle => library_configuration("common_divisions.json");
 }
 
 bundle agent library_configuration(file) 
 {
   classes:
-   
     any::
-
-      "file_defined"
-        not        => strcmp("$(file)","");
+      "override_file_exists"
+        expression => fileexists("$(sys.workdir)/inputs/$(file).override");
 
       "have_library_configuration_data" 
         expression => regcmp(".*\{.*\}.*","$(configuration_string)"),
@@ -33,13 +31,14 @@ bundle agent library_configuration(file)
         scope      => "namespace";
 
   vars:
-    file_defined::
-      "configuration_file" string => "$(file)";
-
-    !file_defined::
+    override_file_exists::
       "configuration_file"
-        string => "$(sys.workdir)/inputs/common_divisions.json";
+        string => "$(sys.workdir)/inputs/$(file).override";
 
+    !override_file_exists::
+      "configuration_file"
+        string => "$(sys.workdir)/inputs/$(file)";
+    
     any::
       "configuration_data"
         data   => readjson("$(configuration_file)", "999999"),
@@ -78,6 +77,5 @@ bundle agent library_configuration(file)
         ifvarclass => "have_library_configuration_data";
 
     !have_library_configuration_data::
-      "ERROR $(this.bundle): Could not read the library_configuration data from $(configuration_file)"
-        ifvarclass => "!have_library_configuration_data";
+      "ERROR $(this.bundle): Could not read the library_configuration data from $(configuration_file)";
 }

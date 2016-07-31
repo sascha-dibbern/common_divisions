@@ -33,7 +33,7 @@ bundle agent test
 
    pass3::   
     "right_configuration_file" 
-      expression => strcmp("$(common_divisions:library_configuration.configuration_file)","$(cfdivisions.common_divisions_path[library_configuration])/test.json");
+      expression => strcmp("$(common_divisions:library_configuration.configuration_file)","$(sys.workdir)/inputs/common_divisions/library_configuration/test.json");
     "right_variable_v1"
       expression => strcmp("$(common_divisions:library_configuration.v1)","v1-value");
     "right_variable_v2"
@@ -89,7 +89,7 @@ bundle agent test
         slist => getindices("test");
 
   methods:
-    "configuration" usebundle => common_divisions:library_configuration("$(cfdivisions.common_divisions_path[library_configuration])/test.json");
+    "configuration" usebundle => common_divisions:library_configuration("common_divisions/library_configuration/test.json");
 
   reports:
    pass1::
