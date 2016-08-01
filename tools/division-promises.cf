@@ -16,3 +16,17 @@ body copy_from compare_backup_local_cp(from)
     compare     => "digest";
 }
 
+bundle edit_line build_scalar_template(templatefile)
+{
+  delete_lines:
+    !done::
+      ".*"
+        comment => "Delete all lines";
+
+  insert_lines:
+     "$(templatefile)"
+        comment        => "Insert the template file into the file being edited",
+        insert_type    => "file",
+        expand_scalars => "true",
+        classes        => if_ok("done");
+}
