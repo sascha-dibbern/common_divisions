@@ -19,7 +19,7 @@ bundle agent library_configuration(file)
   classes:
     any::
       "override_file_exists"
-        expression => fileexists("$(sys.workdir)/inputs/$(file).override");
+        expression => fileexists("$(sys.workdir)/inputs/override/$(file)");
 
       "have_library_configuration_data" 
         expression => regcmp(".*\{.*\}.*","$(configuration_string)"),
@@ -33,7 +33,7 @@ bundle agent library_configuration(file)
   vars:
     override_file_exists::
       "configuration_file"
-        string => "$(sys.workdir)/inputs/$(file).override";
+        string => "$(sys.workdir)/inputs/override/$(file)";
 
     !override_file_exists::
       "configuration_file"
