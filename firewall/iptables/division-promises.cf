@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = firewall_iptables_default 
+# *cfdivisions_bundlesequence = firewall_iptables_module_setup,firewall_iptables_default 
 # *cfdivisions_depends = cfengine
 #
 
