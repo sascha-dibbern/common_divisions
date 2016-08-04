@@ -134,3 +134,9 @@ bundle agent cfengine_division_binary_update(division_library,source_division,bi
     "update" 
       usebundle => cfengine_binary_update($(binary_path),$(binary));
 }
+
+# Solving namespace-problem for 'standard_services' when using service-promises in other namespaces
+body service_method standard_service
+{
+  service_bundle => default:standard_services("$(this.promiser)","$(this.service_policy)");
+}
