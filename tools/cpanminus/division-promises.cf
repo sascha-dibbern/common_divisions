@@ -64,7 +64,7 @@ bundle agent cpanminus_tools_setup
 
   commands:
     no_pmall_exists.(rhel|centos|fedora)::
-      "$(tar) -xz -C /tmp -f $(default:cfdivisions.division_path[tools_cpanminus])/$(pmtools.pmtoolspackage).tar.gz.dat";
+      "$(tar) -xz -C /tmp -f $(default:cfdivisions.common_divisions_path[tools_cpanminus])/$(pmtools.pmtoolspackage).tar.gz.dat";
       "$(perl) Makefile.PL" 
          contain => pmtools_build;
       "$(make) install"     
@@ -73,7 +73,7 @@ bundle agent cpanminus_tools_setup
   files:
       "$(perlmodules.script)"
         perms     => default:mog("755","$(specific_users.superuser)","$(specific_users.supergroup)"),
-        copy_from => compare_backup_local_cp("$(default:cfdivisions.division_path[tools_cpanminus])/perlmodules.pl.txt"),
+        copy_from => compare_backup_local_cp("$(default:cfdivisions.common_divisions_path[tools_cpanminus])/perlmodules.pl.txt"),
         classes   => default:if_repaired("perlmodules_script_updated"),
         comment   => "Update perlmodules.pl script";
 
