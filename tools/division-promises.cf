@@ -28,5 +28,5 @@ bundle edit_line build_scalar_template(templatefile)
         comment        => "Insert the template file into the file being edited",
         insert_type    => "file",
         expand_scalars => "true",
-        classes        => if_ok("done");
+        classes        => default:if_ok("done");
 }
