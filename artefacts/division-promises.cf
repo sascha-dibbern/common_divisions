@@ -1,6 +1,6 @@
 #
 # *cfdivisions_bundlesequence = artefacts,artefacts_hub
-# *cfdivisions_depends = library_configuration,cfengine
+# *cfdivisions_depends = library_configuration,cfengine,specific_users
 #
 # library_configuration defined data
 # * artefacts_location => optional: full path to artefacts location on artefacts server. Default '$(sys.workdir)/artefacts'
@@ -35,12 +35,16 @@ bundle common artefacts
         string  => "$(sys.policy_hub)",
         comment => "The artefacts host",
         handle  => "vars_artefacts_hub";
+
+      "cache"
+        string  => "$(sys.workdir)/artefacts_cache",
+        comment => "The artefacts directory on the agent host",
+        handle  => "vars_artefacts_cache";
 }
 
 bundle agent artefacts_update(source,destination,mode,user,group,class)
 {
-
- files:
+  files:
    "$(destination)"
      comment      => "Copy recursively artefacts $(destination) from artefacts source $(source) on policy server if a new validation was acquired",
      handle       => "artefacts_update",
@@ -52,10 +56,33 @@ bundle agent artefacts_update(source,destination,mode,user,group,class)
      classes      => artefacts_promise_state("$(class)");
 }
 
+bundle agent artefacts_cache(artefacts,class)
+{
+  vars::
+    !DEBUG::
+      "mode" string => "600";
+    DEBUG::
+      "mode" string => "666";
+
+  methods:
+    any::
+      "update_artefact"
+        usebundle => common_divisions:artefacts_update(
+          "$(artefacts.location)/$(artefacts)",
+          "$(artefacts.cache)",
+          "$(mode)","$(specific_users.superuser)","$(specific_users.supergroup)",
+          "$(class)"
+        );
+  
+  reports:
+    any::
+      "Artefacts cache ($(artefacts.location)/$(artefacts)) updated."
+        ifvarclass => "$(class)_repaired";
+}
+
 bundle agent artefacts_update_file(source,destination,mode,user,group,class)
 {
-
- files:
+  files:
    "$(destination)"
      comment      => "Copy an artefact $(destination) from artefacts source $(source)on policy server if a new validation was acquired",
      handle       => "artefacts_update_files",
@@ -64,6 +91,30 @@ bundle agent artefacts_update_file(source,destination,mode,user,group,class)
      perms        => default:mog("$(mode)","$(user)","$(group)"),
      action       => artefacts_immediate,
      classes      => artefacts_promise_state("$(class)");
+}
+
+bundle agent artefacts_cache_file(artefact_file_destination,class)
+{
+  vars::
+    !DEBUG::
+      "mode" string => "600";
+    DEBUG::
+      "mode" string => "666";
+
+  methods:
+    any::
+      "update_artefact_file"
+        usebundle => common_divisions:artefacts_update_file(
+          "$(artefacts.location)/$(artefact_file_destination)",
+          "$(artefacts.cache)/$(artefact_file_destination)",
+          "$(mode)","$(specific_users.superuser)","$(specific_users.supergroup)",
+          "$(class)"
+        );
+  
+  reports:
+    any::
+      "Artefact-file cache ($(artefacts.location)/$(artefact_file_destination)) updated."
+        ifvarclass => "$(class)_repaired";
 }
 
 bundle agent artefacts_hub
