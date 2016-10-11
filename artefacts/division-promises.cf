@@ -14,8 +14,9 @@ body file control
 bundle common artefacts
 {
   classes:
-    "location_defined"
-       not => strcmp("$(library_configuration.artefacts_location)","");
+    any::
+      "location_defined"
+         not => strcmp("$(library_configuration.artefacts_location)","");
 
   vars:
     location_defined::
@@ -44,9 +45,16 @@ bundle common artefacts
 
 bundle agent setup_artefacts_cache
 {
+  vars:
+    !DEBUG::
+      "mode" string => "700";
+    DEBUG::
+      "mode" string => "766";
+
   files:
+    any::
       "$(artefacts.cache)/."
-        perms  => default:mog("600","$(specific_users.superuser)","$(specific_users.superuser)"),
+        perms  => default:mog("$(mode)","$(specific_users.superuser)","$(specific_users.superuser)"),
         create => "true";
 }
 
@@ -68,9 +76,9 @@ bundle agent artefacts_cache(artefacts,class)
 {
   vars:
     !DEBUG::
-      "mode" string => "600";
+      "mode" string => "700";
     DEBUG::
-      "mode" string => "666";
+      "mode" string => "766";
 
   methods:
     any::
@@ -105,9 +113,9 @@ bundle agent artefacts_cache_file(artefact_file_destination,class)
 {
   vars:
     !DEBUG::
-      "mode" string => "600";
+      "mode" string => "700";
     DEBUG::
-      "mode" string => "666";
+      "mode" string => "766";
 
   methods:
     any::
