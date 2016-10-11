@@ -45,7 +45,7 @@ bundle common artefacts
 bundle agent setup_artefacts_cache
 {
   files:
-      "$(artefacts.cache)"
+      "$(artefacts.cache)/."
         perms  => default:mog("600","$(specific_users.superuser)","$(specific_users.superuser)"),
         create => "true";
 }
