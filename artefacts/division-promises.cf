@@ -1,5 +1,5 @@
 #
-# *cfdivisions_bundlesequence = artefacts,artefacts_hub
+# *cfdivisions_bundlesequence = artefacts,artefacts_hub,setup_artefacts_cache
 # *cfdivisions_depends = library_configuration,cfengine,specific_users
 #
 # library_configuration defined data
@@ -40,6 +40,13 @@ bundle common artefacts
         string  => "$(sys.workdir)/artefacts_cache",
         comment => "The artefacts directory on the agent host",
         handle  => "vars_artefacts_cache";
+}
+
+bundle agent setup_artefacts_cache
+{
+  files:
+      "$(artefacts.location)/."
+        perms => mog("600","$(specific_users.superuser)","$(specific_users.superuser)");
 }
 
 bundle agent artefacts_update(source,destination,mode,user,group,class)
