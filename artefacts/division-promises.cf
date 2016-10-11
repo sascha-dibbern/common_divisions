@@ -46,7 +46,8 @@ bundle agent setup_artefacts_cache
 {
   files:
       "$(artefacts.location)/."
-        perms => default:mog("600","$(specific_users.superuser)","$(specific_users.superuser)");
+        perms  => default:mog("600","$(specific_users.superuser)","$(specific_users.superuser)"),
+        create => "true";
 }
 
 bundle agent artefacts_update(source,destination,mode,user,group,class)
