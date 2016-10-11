@@ -37,7 +37,7 @@ bundle common artefacts
         handle  => "vars_artefacts_hub";
 
       "cache"
-        string  => "$(sys.workdir)/artefacts_cache",
+        string  => "$(sys.workdir)/artefacts-cache",
         comment => "The artefacts directory on the agent host",
         handle  => "vars_artefacts_cache";
 }
