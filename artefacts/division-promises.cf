@@ -58,7 +58,7 @@ bundle agent artefacts_update(source,destination,mode,user,group,class)
 
 bundle agent artefacts_cache(artefacts,class)
 {
-  vars::
+  vars:
     !DEBUG::
       "mode" string => "600";
     DEBUG::
@@ -95,7 +95,7 @@ bundle agent artefacts_update_file(source,destination,mode,user,group,class)
 
 bundle agent artefacts_cache_file(artefact_file_destination,class)
 {
-  vars::
+  vars:
     !DEBUG::
       "mode" string => "600";
     DEBUG::
