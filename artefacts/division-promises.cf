@@ -84,7 +84,7 @@ bundle agent artefacts_cache(artefacts,class)
     any::
       "update_artefact"
         usebundle => common_divisions:artefacts_update(
-          "$(artefacts.location)/$(artefacts)",
+          "$(artefacts)",
           "$(artefacts.cache)",
           "$(mode)","$(specific_users.superuser)","$(specific_users.supergroup)",
           "$(class)"
@@ -121,7 +121,7 @@ bundle agent artefacts_cache_file(artefact_file_destination,class)
     any::
       "update_artefact_file"
         usebundle => common_divisions:artefacts_update_file(
-          "$(artefacts.location)/$(artefact_file_destination)",
+          "$(artefact_file_destination)",
           "$(artefacts.cache)/$(artefact_file_destination)",
           "$(mode)","$(specific_users.superuser)","$(specific_users.supergroup)",
           "$(class)"
