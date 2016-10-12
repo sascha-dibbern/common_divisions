@@ -69,7 +69,8 @@ bundle agent artefacts_update(source,destination,mode,user,group,class)
      file_select  => artefacts_input_files,
      perms        => default:mog("$(mode)","$(user)","$(group)"),
      action       => artefacts_immediate,
-     classes      => artefacts_promise_state("$(class)");
+     classes      => artefacts_promise_state("$(class)"),
+     create       => "true";
 }
 
 bundle agent artefacts_cache(artefacts,class)
@@ -106,7 +107,8 @@ bundle agent artefacts_update_file(source,destination,mode,user,group,class)
      file_select  => artefacts_input_files,
      perms        => default:mog("$(mode)","$(user)","$(group)"),
      action       => artefacts_immediate,
-     classes      => artefacts_promise_state("$(class)");
+     classes      => artefacts_promise_state("$(class)"),
+     create       => "true";
 }
 
 bundle agent artefacts_cache_file(artefact_file_destination,class)
