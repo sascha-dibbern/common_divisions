@@ -86,7 +86,7 @@ bundle agent artefacts_cache(artefacts,class)
       "update_artefact"
         usebundle => common_divisions:artefacts_update(
           "$(artefacts)",
-          "$(artefacts.cache)",
+          "$(artefacts.cache)/$(artefacts)",
           "$(mode)","$(specific_users.superuser)","$(specific_users.supergroup)",
           "$(class)"
         );
