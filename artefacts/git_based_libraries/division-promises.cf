@@ -1,0 +1,62 @@
+#
+# *cfdivisions_bundlesequence = 
+# *cfdivisions_depends = artefacts
+#
+# Maintain a collection of git-based artefact libraries
+
+body file control
+{
+    namespace => "common_divisions";
+}
+
+bundle agent exists_gitbased_artefacts_library(directory)
+{
+  classes:
+    "gitbased_artefacts_library_$(directory)"
+      expression => fileexists("$(artefacts.location)/$(directory)/.git/config"),
+      scope      => "namespace";
+
+    "no_gitbased_artefacts_library_$(directory)"
+      not   => fileexists("$(artefacts.location)/$(directory)/.git/config"),
+      scope => "namespace";
+}
+
+body contain git_artefacts_library_in_dir(directory)
+{
+    chdir => "$(directory)";
+}
+
+body classes git_clone_artefacts_library_state(directory)
+{
+    kept_returncodes => { "0" };
+    promise_kept     => { "git_clone_ok_$(directory)" };
+}
+
+body classes git_pull_artefacts_library_state(directory)
+{
+    kept_returncodes => { "0" };
+    promise_kept     => { "git_pull_ok_$(directory)" };
+}
+
+body classes git_checkout_artefacts_library_state(directory)
+{
+    kept_returncodes => { "0" };
+    promise_kept     => { "git_checkout_ok_$(directory)" };
+}
+
+bundle agent build_gitbased_artefacts_library(repository,directory)
+{
+  methods:
+    "check_$(directory)"
+        usebundle => exists_gitbased_artefacts_library($(directory));
+
+  commands:
+    am_policy_hub::
+      # Handling GIT-clone from repository
+      "/usr/bin/git clone $(repository)"
+        contain    => git_artefacts_library_in_dir("$(artefacts.location)/$(directory)"),
+	classes    => git_clone_artefacts_library_state(canonify($(directory))),
+        comment    => "Clone $(directory) from '$(repository)' git repository",
+        handle     => "git_clone_artefacts_library_$(directory)",
+        ifvarclass => "no_gitbased_artefacts_library_$(directory)";
+}
