@@ -60,3 +60,19 @@ bundle agent build_gitbased_artefacts_library(repository,directory)
         handle     => "git_clone_artefacts_library_$(directory)",
         ifvarclass => "no_gitbased_artefacts_library_$(directory)";
 }
+
+bundle agent update_gitbased_artefacts_library(repository,directory)
+{
+  methods:
+    "check_$(directory)"
+        usebundle => exists_gitbased_artefacts_library($(directory));
+
+  commands:
+    am_policy_hub::
+      "/usr/bin/git pull $(repository)"
+        contain    => git_artefacts_library_in_dir("$(artefacts.location)/$(directory)"),
+	classes    => git_pull_artefacts_library_state(canonify($(directory))),
+        comment    => "Pull $(directory) from '$(repository)' git repository",
+        handle     => "git_pull_artefacts_library_$(directory)",
+        ifvarclass => "gitbased_artefacts_library_$(directory)";
+}
