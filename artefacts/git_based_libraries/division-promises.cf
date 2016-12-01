@@ -29,32 +29,32 @@ body contain git_artefacts_library_in_dir(directory)
 body classes git_clone_artefacts_library_state(directory)
 {
     kept_returncodes => { "0" };
-    promise_kept     => { "git_clone_ok_$(directory)" };
+    promise_kept     => { "git_clone_artefacts_ok_$(directory)" };
 }
 
 body classes git_pull_artefacts_library_state(directory)
 {
     kept_returncodes => { "0" };
-    promise_kept     => { "git_pull_ok_$(directory)" };
+    promise_kept     => { "git_pull_artefacts_ok_$(directory)" };
 }
 
 body classes git_checkout_artefacts_library_state(directory)
 {
     kept_returncodes => { "0" };
-    promise_kept     => { "git_checkout_ok_$(directory)" };
+    promise_kept     => { "git_checkout_artefacts_ok_$(directory)" };
 }
 
-bundle agent build_gitbased_artefacts_library(repository,directory)
+bundle agent clone_gitbased_artefacts_library(repository,directory)
 {
   methods:
-    "check_$(directory)"
+    "check_git_$(directory)"
         usebundle => exists_gitbased_artefacts_library($(directory));
 
   commands:
     am_policy_hub::
       # Handling GIT-clone from repository
-      "/usr/bin/git clone $(repository)"
-        contain    => git_artefacts_library_in_dir("$(artefacts.location)/$(directory)"),
+      "/usr/bin/git clone $(repository)/$(directory).git"
+        contain    => git_artefacts_library_in_dir("$(artefacts.location)"),
 	classes    => git_clone_artefacts_library_state(canonify($(directory))),
         comment    => "Clone $(directory) from '$(repository)' git repository",
         handle     => "git_clone_artefacts_library_$(directory)",
@@ -64,15 +64,21 @@ bundle agent build_gitbased_artefacts_library(repository,directory)
 bundle agent update_gitbased_artefacts_library(repository,directory)
 {
   methods:
-    "check_$(directory)"
+    am_policy_hub::
+      "check_git_$(directory)"
         usebundle => exists_gitbased_artefacts_library($(directory));
+
+      "clone_git_$(directory)"
+        usebundle  => clone_gitbased_artefacts_library($(repository),$(directory)),
+        ifvarclass => "no_gitbased_artefacts_library_$(directory)";
 
   commands:
     am_policy_hub::
-      "/usr/bin/git pull $(repository)"
+      "/usr/bin/git pull"
         contain    => git_artefacts_library_in_dir("$(artefacts.location)/$(directory)"),
 	classes    => git_pull_artefacts_library_state(canonify($(directory))),
         comment    => "Pull $(directory) from '$(repository)' git repository",
         handle     => "git_pull_artefacts_library_$(directory)",
         ifvarclass => "gitbased_artefacts_library_$(directory)";
 }
+
