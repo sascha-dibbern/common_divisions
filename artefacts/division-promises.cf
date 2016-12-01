@@ -76,9 +76,9 @@ bundle agent artefacts_update(source,destination,mode,user,group,class)
 bundle agent artefacts_cache(artefacts,class)
 {
   vars:
-    !DEBUG::
+    !common_divisions:DEBUG::
       "mode" string => "700";
-    DEBUG::
+    common_divisions:DEBUG::
       "mode" string => "766";
 
   methods:
