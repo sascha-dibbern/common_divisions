@@ -2,7 +2,7 @@
 
 # DESCRIPTION
 
-"common_divisions" is a generic CFEngine3 based library, where promises-files are structured as division for usage under CFDivisons.
+"common_divisions" is a generic CFEngine3 based library, where promises-files are structured as divisions for usage under CFDivisions.
 
 CFDivisions is a CFEngine3 module for organizing promises in a modular and goal intention based structure.
 ( See more about [CFDivisions](https://github.com/sascha-dibbern/CFDivisions) )
