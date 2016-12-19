@@ -2,7 +2,7 @@
 
 # DESCRIPTION
 
-*common_divisions* is a generic CFEngine3 based library, where promises-files are structured as divisions for usage under CFDivisions.
+*common_divisions* is a generic CFEngine3 based CFDivisions-library containing a collection og generic reusable code to build configuration stacks.
 
 CFDivisions is a CFEngine3 module for organizing promises in a modular and goal intention based structure.
 ( See more about [CFDivisions](https://github.com/sascha-dibbern/CFDivisions) )
@@ -64,7 +64,7 @@ and modify in "body common control" the "inputs"- and "bundlesequence"-definitio
 
 ## Enable documentation for divisions
 
-CFDivisions can generate POD and man3 documentation from divisions this divisions-library.
+CFDivisions can generate perldoc PODs and man3 documentation from divisions this divisions-library.
 
     bundle common divisions
     {
@@ -80,6 +80,11 @@ CFDivisions can generate POD and man3 documentation from divisions this division
             );
         ...
     }
+
+# SEE ALSO
+
+  * [CFDivisions](https://github.com/sascha-dibbern/CFDivisions) : The underlying CFEngine3 module to enable divisionbased components
+  * [dibbern_info_divisions](https://github.com/sascha-dibbern/dibbern_info_divisions) : An example CFDivisions library build upon *common_divisions*
 
 # LICENSE
 
