@@ -60,6 +60,73 @@ bundle agent firewall_iptables_module_setup
         usebundle => common_divisions:cfengine_division_module_update("common_divisions","firewall_iptables","$(firewall_iptables.module)");
 }
 
+body classes iptables_services_setup_class
+{
+      scope => "bundle";
+      promise_kept => { "iptables_services_installed" };
+}
+
+body classes firewalld_service_remove_class
+{
+      scope => "bundle";
+      promise_kept => { "firewalld_service_uninstalled" };
+}
+
+# Inspired by https://www.digitalocean.com/community/tutorials/how-to-migrate-from-firewalld-to-iptables-on-centos-7
+bundle agent firewall_iptables_services_only(iptables_def_file)
+{
+  services:
+    common_divisions:redhat_alike::
+      "firewalld"
+        service_policy => "stop",
+        service_method => common_divisions:standard_service; 
+
+      "firewalld" 
+        service_policy => "disable",
+        service_method => common_divisions:standard_service; 
+
+  packages:
+    common_divisions:redhat_alike::
+      "firewalld"
+         policy         => "absent",
+         package_module => default:yum,
+         classes        => firewalld_service_remove_class;
+
+      "iptables-services"
+         policy         => "present",
+         package_module => default:yum,
+         classes        => iptables_services_setup_class;
+
+  files:
+    iptables_services_installed::
+      "/etc/sysconfig/iptables"
+        changes      => default:detect_all_change,
+        copy_from    => default:local_dcp("$(iptables_def_file)"),
+	depth_search => default:recurse("inf"),
+        perms        => default:mog(
+          "600",
+          "root",
+          "root"
+        ),
+        classes      => default:if_repaired("iptables_restart_required");
+
+  services:
+    common_divisions:redhat_alike::
+      "iptables" 
+        service_policy => "enable",
+        service_method => common_divisions:standard_service; 
+
+      "iptables" 
+        service_policy => "start",
+        service_method => common_divisions:standard_service; 
+
+    iptables_restart_required::
+      "iptables" 
+        service_policy => "restart",
+        service_method => common_divisions:standard_service; 
+}
+
+
 bundle agent firewall_iptables_open_INPUT_allsources(protocol,portnum,classname)
 {
   classes:
