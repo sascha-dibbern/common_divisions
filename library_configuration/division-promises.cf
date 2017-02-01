@@ -37,7 +37,7 @@ bundle agent library_configuration(file)
 
     !override_file_exists::
       "configuration_file"
-        string => "$(sys.workdir)/inputs/$(file)";
+        string => "$(sys.workdir)/inputs/cfdivision_library_configuration/$(file)";
     
     any::
       "configuration_data"
