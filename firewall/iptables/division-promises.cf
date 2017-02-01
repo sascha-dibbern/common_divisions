@@ -92,6 +92,7 @@ bundle agent firewall_iptables_services_only(iptables_def_file)
          package_module => default:yum,
          classes        => firewalld_service_remove_class;
 
+    common_divisions:redhat_alike.firewalld_service_uninstalled.!iptables_services_installed::
       "iptables-services"
          policy         => "present",
          package_module => default:yum,
@@ -111,7 +112,7 @@ bundle agent firewall_iptables_services_only(iptables_def_file)
         classes      => default:if_repaired("iptables_restart_required");
 
   services:
-    common_divisions:redhat_alike::
+    common_divisions:redhat_alike.iptables_services_installed::
       "iptables" 
         service_policy => "enable",
         service_method => common_divisions:standard_service; 
@@ -120,12 +121,18 @@ bundle agent firewall_iptables_services_only(iptables_def_file)
         service_policy => "start",
         service_method => common_divisions:standard_service; 
 
-    iptables_restart_required::
+    common_divisions:redhat_alike.iptables_restart_required::
       "iptables" 
         service_policy => "restart",
         service_method => common_divisions:standard_service; 
 }
 
+bundle agent firewall_iptables_services_only_at_least_for_cfengine_and_ssh
+{
+  methods:
+    "firewall_iptables_services_only_for_cfengine_and_ssh"
+       usebundle => firewall_iptables_services_only("$(cfdivisions.common_divisions_path[firewall_iptables])/iptables-cfe-ssh-only.txt");
+}
 
 bundle agent firewall_iptables_open_INPUT_allsources(protocol,portnum,classname)
 {
